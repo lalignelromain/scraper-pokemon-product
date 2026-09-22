@@ -15,11 +15,15 @@ const SITES = [
       return !html.includes("Zut") && !html.includes("Epuisé");
     }
   },
-  {
+{
     nom: "JOUÉCLUB",
-    url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html", // <-- Ton URL exacte
+    url: "https://www.joueclub.fr/votre-produit",
     verifier: (html) => {
-      return !html.includes("Indisponible");
+      // Cherche la balise de disponibilité Schema.org dans le HTML brut
+      if (html.includes('schema.org/InStock')) {
+        return true;
+      }
+      return false;
     }
   }
 ];
