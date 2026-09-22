@@ -1,4 +1,4 @@
-# 📦 Automation - Surveillance des Stocks de Jouets
+# 📦 Surveillance des Stocks de Jouets
 
 Script Node.js exécuté via **GitHub Actions** pour vérifier la disponibilité de produits en temps réel sur plusieurs enseignes françaises.
 
