@@ -3,21 +3,21 @@ const CANAL_NTFY = "stock-jouets-romain"; // Ton canal ntfy
 const SITES = [
   {
     nom: "SMYTHS TOYS",
-    url: "https://www.smythstoys.com/fr/fr-fr/votre-produit", // <-- Ton URL exacte
+    url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821", // <-- Ton URL exacte
     verifier: (html) => {
       return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
     }
   },
   {
     nom: "KING JOUET",
-    url: "https://www.king-jouet.com/votre-produit", // <-- Ton URL exacte
+    url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm", // <-- Ton URL exacte
     verifier: (html) => {
       return !html.includes("Zut") && !html.includes("Epuisé");
     }
   },
   {
     nom: "JOUÉCLUB",
-    url: "https://www.joueclub.fr/votre-produit", // <-- Ton URL exacte
+    url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html", // <-- Ton URL exacte
     verifier: (html) => {
       return !html.includes("Indisponible");
     }
