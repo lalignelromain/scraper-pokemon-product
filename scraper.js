@@ -3,27 +3,25 @@ const CANAL_NTFY = "stock-jouets-romain"; // Ton canal ntfy
 const SITES = [
   {
     nom: "SMYTHS TOYS",
-    url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821", // <-- Ton URL exacte
+    url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821",
     verifier: (html) => {
       return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
     }
   },
   {
     nom: "KING JOUET",
-    url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm", // <-- Ton URL exacte
+    url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm",
     verifier: (html) => {
       return !html.includes("Zut") && !html.includes("Epuisé");
     }
   },
-{
+  {
     nom: "JOUÉCLUB",
-    url: "https://www.joueclub.fr/votre-produit",
+    url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
     verifier: (html) => {
-      // Cherche la balise de disponibilité Schema.org dans le HTML brut
-      if (html.includes('schema.org/InStock')) {
-        return true;
-      }
-      return false;
+      const enStockSchema = html.includes('schema.org/InStock');
+      const boutonActif = html.includes('c-product-add-to-cart') && !html.includes('Indisponible');
+      return enStockSchema || boutonActif;
     }
   }
 ];
@@ -58,7 +56,10 @@ async function verifierTousLesStocks() {
         }
       });
 
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.log(`[Erreur HTTP ${response.status}] Impossible d'accéder à ${site.nom}`);
+        continue;
+      }
 
       const html = await response.text();
       if (site.verifier(html)) {
@@ -68,7 +69,7 @@ async function verifierTousLesStocks() {
         console.log(`[Rupture] ${site.nom}`);
       }
     } catch (e) {
-      console.error(`Erreur lors de la vérification de ${site.nom}:`, e.message);
+      console.log(`[Erreur] Impossible de vérifier ${site.nom} : ${e.message}`);
     }
   }
 }
