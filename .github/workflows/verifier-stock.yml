@@ -1,0 +1,23 @@
+name: Verification Stock Jouets
+
+on:
+  schedule:
+    # S'exécute automatiquement toutes les 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Permet d'exécuter le script à la main pour tester
+
+jobs:
+  check-stock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Exécuter le script de vérification
+        run: node scraper.js
