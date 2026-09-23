@@ -9,7 +9,7 @@ Un système de monitoring automatique et résilient développé en **Node.js**, 
 * **Surveillance multi-sites** : Inspection simultanée de plusieurs marchands avec des règles d'analyse HTML sur-mesure.
 * **Notifications Push Direct-Click** : Réception d'alertes instantanées sur smartphone via **ntfy.sh** avec ouverture directe de la fiche produit au clic.
 * **Distinction visuelle des alertes** : Séparation claire entre les alertes de stock (priorité haute) et les notifications de maintenance/panne technique (priorité basse).
-* **Robustesse & Anti-Bot** : Rotation dynamique des signatures *User-Agent* et pauses aléatoires entre les requêtes pour limiter les risques de blocage d'IP.
+* **Robustesse & Anti-Bot** : Rotation dynamique des signatures *User-Agent*, en-têtes HTTP de navigation complets et pauses aléatoires entre les requêtes pour limiter les risques de blocage d'IP.
 * **Exécution 100 % Cloud** : Aucune infrastructure physique à maintenir (utilisation combinée des quotas gratuits de GitHub Actions, cron-job.org et ntfy).
 
 ---
@@ -24,23 +24,23 @@ Un système de monitoring automatique et résilient développé en **Node.js**, 
 
 ## 🏗️ Architecture & Stack Technique
 
-┌─────────────────┐       ┌──────────────────────┐       ┌────────────────┐       ┌─────────────────┐
-│  cron-job.org   │ ────> │  GitHub Actions API  │ ────> │   scraper.js   │ ────> │   ntfy.sh API   │
-│ (Trigger / 5m)  │       │ (Runner Linux Cloud) │       │ (Node.js Fetch)│       │  (Push Mobile)  │
-└─────────────────┘       └──────────────────────┘       └────────────────┘       └─────────────────┘
+┌─────────────────┐        ┌──────────────────────┐        ┌────────────────┐        ┌─────────────────┐
+│   cron-job.org  │ ────> │  GitHub Actions API  │ ────> │   scraper.js   │ ────> │    ntfy.sh API  │
+│ (Trigger / 5m)  │        │ (Runner Linux Cloud) │        │ (Node.js Fetch)│        │  (Push Mobile)  │
+└─────────────────┘        └──────────────────────┘        └────────────────┘        └─────────────────┘
 
 | Composant | Rôle |
 | :--- | :--- |
 | **Node.js (ES6+)** | Scripts d'extraction HTML (`fetch`), analyse conditionnelle et construction des payloads JSON. |
 | **GitHub Actions** | Environnement d'exécution *serverless* hébergeant et exécutant le script à la demande. |
-| **cron-job.org** | Webhook externe assurant un cadence exacte toutes les 5 minutes (plus précis que le cron GitHub natif). |
+| **cron-job.org** | Webhook externe assurant une cadence exacte toutes les 5 minutes (plus précis que le cron GitHub natif). |
 | **ntfy.sh** | Service de pub/sub HTTP permettant la livraison de notifications push sur Android / iOS / Web. |
 
 ---
 
 ## ⚡ Envoi des Notifications
 
-Les alertes sont envoyées via l'API REST de `ntfy.sh` en format JSON structuré :
+Les alertes sont envoyées via l'API REST de `ntfy.sh` au format JSON structuré :
 
 ### 1. Notification de Stock Dispo (Priorité 4 - Haute)
 * **Design** : Titre en majuscules avec émojis `📦` / `🎉` / `🛍️`.
@@ -52,13 +52,14 @@ Les alertes sont envoyées via l'API REST de `ntfy.sh` en format JSON structuré
 
 ---
 
-## 🛡️ Stratégie Anti-Scraping
+## 🛡️ Stratégie Anti-Scraping & Empreinte HTTP
 
 Pour garantir la pérennité du service sans subir de ban d'IP :
 
 1. **User-Agent Rotation** : Injection aléatoire d'en-têtes HTTP simulant des navigateurs récents (Chrome, Safari, Firefox, Edge sous Windows et macOS).
-2. **Human-like Delays** : Ingestion d'une temporisation aléatoire variant entre 2 000 ms et 5 000 ms (`Math.random()`) entre chaque requête marchand.
-3. **HTTP Headers** : Simulation complète d'en-têtes de navigation standard (`Accept`, `Accept-Language`).
+2. **Browser Headers Full-Set** : Emulation complète d'empreinte client via les en-têtes `Sec-CH-UA`, `Sec-Fetch-*` (`mode`, `site`, `dest`) et `Referer` pour contourner les filtrages type Cloudflare/Datadome (résolution des erreurs HTTP 403).
+3. **Human-like Delays** : Ingestion d'une temporisation aléatoire variant entre 2 000 ms et 5 000 ms (`Math.random()`) entre chaque requête marchand.
+4. **Encoding Standardization** : Normalisation UTF-8 et assainissement des identifiants marchands (ex. `JOUECLUB`) pour éliminer la corruption de caractères dans les flux de notification push.
 
 ---
 
