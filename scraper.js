@@ -15,7 +15,7 @@ const SITES = [
   {
     nom: "KING JOUET",
     url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm",
-    useProxy: false,
+    useProxy: true,
     verifier: (html) => {
       return !html.includes("Zut") && !html.includes("Epuisé");
     }
