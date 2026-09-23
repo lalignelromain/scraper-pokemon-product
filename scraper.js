@@ -5,7 +5,7 @@ const SITES = [
     nom: "SMYTHS TOYS",
     url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821",
     verifier: (html) => {
-      return true;
+      return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
     }
   },
   {
