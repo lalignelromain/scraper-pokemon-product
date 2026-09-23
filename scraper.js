@@ -92,6 +92,47 @@ const SITES = [
         return !estIndisponible && aBoutonAchat;
       }
     }
+  },
+  {
+    nom: "CARREFOUR",
+    url: "https://www.carrefour.fr/s?q=coffret+dresseur+d+elite+30",
+    verifier: (html) => {
+      // 1. Essai de lecture via données JSON/API de recherche
+      try {
+        const data = JSON.parse(html);
+        const produits = data.products || data.results || data.items || [];
+        return produits.some(p => {
+          const nom = (p.title || p.name || p.label || '').toLowerCase();
+          const estCoffret30 = (nom.includes('30') || nom.includes('30e')) && (nom.includes('dresseur') || nom.includes('etb'));
+          const enStock = p.availability === 'IN_STOCK' || p.inStock === true || (p.offers && p.offers.some(o => o.availability?.includes('InStock')));
+          return estCoffret30 && enStock;
+        });
+      } catch (e) {
+        // 2. Repli sur l'analyse HTML de la page de recherche
+        const content = html.toLowerCase();
+        
+        const contient30 = content.includes('30') || content.includes('30e');
+        const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
+        
+        if (!contient30 || !contientTermeCoffret) {
+          return false;
+        }
+
+        const estIndisponible = 
+          content.includes('indisponible') || 
+          content.includes('outofstock') || 
+          content.includes('épuisé') || 
+          content.includes('victime de son succès');
+
+        const aBoutonAchat = 
+          content.includes('instock') || 
+          content.includes('ajouter au panier') || 
+          content.includes('ajouter au drive') ||
+          content.includes('add-to-cart');
+
+        return !estIndisponible && aBoutonAchat;
+      }
+    }
   }
 ];
 
