@@ -31,103 +31,13 @@ const SITES = [
     }
   },
   {
-    nom: "LA GRANDE RÉCRÉ",
-    url: "https://www.lagranderecre.fr/e-commerce/search?q=pokemon",
-    useProxy: false,
-    verifier: (html) => {
-      const content = html.toLowerCase();
-      const contient30 = content.includes('30');
-      const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-      
-      if (!contient30 || !contientTermeCoffret) return false;
-
-      const estIndisponible = 
-        content.includes('victime de son succès') || 
-        content.includes('épuisé en ligne') || 
-        content.includes('indisponible');
-
-      const aBoutonAchat = 
-        content.includes('add-to-cart') || 
-        content.includes('ajouter au panier') || 
-        content.includes('"instock":true');
-
-      return !estIndisponible && aBoutonAchat;
-    }
-  },
-  {
-    nom: "CULTURA",
-    url: "https://www.cultura.com/search/results?search_query=coffret%20dresseur%20d%27%C3%A9lite",
-    useProxy: true,
-    verifier: (html) => {
-      const content = html.toLowerCase();
-
-      // Filtre anti-marketplace
-      if (content.includes('vendu et expédié par') && !content.includes('vendu par cultura')) {
-        return false;
-      }
-
-      try {
-        const data = JSON.parse(html);
-        const produits = data.products || data.results || [];
-        return produits.some(p => {
-          const nom = (p.name || p.title || '').toLowerCase();
-          const estCoffret30 = nom.includes('30') && (nom.includes('dresseur') || nom.includes('etb'));
-          const estVendeurOfficiel = !p.seller || p.seller.name?.toLowerCase().includes('cultura');
-          const enStock = p.inStock === true || p.availability === 'IN_STOCK' || p.stock > 0;
-          return estCoffret30 && estVendeurOfficiel && enStock;
-        });
-      } catch (e) {
-        const contient30 = content.includes('30');
-        const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-        if (!contient30 || !contientTermeCoffret) return false;
-
-        const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
-        const aBoutonAchat = content.includes('ajouter au panier') || content.includes('add-to-cart');
-        return !estIndisponible && aBoutonAchat;
-      }
-    }
-  },
-  {
-    nom: "CARREFOUR",
-    url: "https://www.carrefour.fr/s?q=coffret+dresseur+d+elite+30",
-    useProxy: true,
-    verifier: (html) => {
-      const content = html.toLowerCase();
-
-      // Filtre anti-marketplace
-      if (content.includes('vendu et expédié par') && !content.includes('carrefour')) {
-        return false;
-      }
-
-      try {
-        const data = JSON.parse(html);
-        const produits = data.products || data.results || data.items || [];
-        return produits.some(p => {
-          const nom = (p.title || p.name || p.label || '').toLowerCase();
-          const estCoffret30 = (nom.includes('30') || nom.includes('30e')) && (nom.includes('dresseur') || nom.includes('etb'));
-          const estVendeurOfficiel = !p.seller || p.seller.name?.toLowerCase().includes('carrefour');
-          const enStock = p.availability === 'IN_STOCK' || p.inStock === true;
-          return estCoffret30 && estVendeurOfficiel && enStock;
-        });
-      } catch (e) {
-        const contient30 = content.includes('30') || content.includes('30e');
-        const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-        if (!contient30 || !contientTermeCoffret) return false;
-
-        const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
-        const aBoutonAchat = content.includes('ajouter au panier') || content.includes('add-to-cart');
-        return !estIndisponible && aBoutonAchat;
-      }
-    }
-  },
-  {
     nom: "E.LECLERC",
     url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
     useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
 
-      // Filtre anti-marketplace
+      // Filtre anti-marketplace (exclure vendeurs tiers)
       if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) {
         return false;
       }
@@ -248,7 +158,6 @@ async function verifierTousLesStocks() {
     try {
       let targetUrl = site.url;
 
-      // Utilisation des paramètres avancés ScraperAPI pour bypasser le 403
       if (site.useProxy && SCRAPER_API_KEY) {
         targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true&country_code=fr`;
       }
@@ -287,7 +196,6 @@ async function verifierTousLesStocks() {
   await envoyerHeartbeat(SITES.length, erreursRunCount);
 }
 
-// Bloque l'arrêt de Node.js jusqu'à la fin complète des requêtes ntfy
 (async () => {
   await verifierTousLesStocks();
 })();
