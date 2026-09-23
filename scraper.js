@@ -52,6 +52,44 @@ const SITES = [
         content.includes('"instock":true');
 
       return !estIndisponible && aBoutonAchat;
+    },
+    {
+    nom: "CULTURA",
+    url: "https://www.cultura.com/search/results?search_query=coffret%20dresseur%20d%27%C3%A9lite",
+    verifier: (html) => {
+      // 1. Essai de lecture au format JSON (si l'endpoint bascule sur l'API)
+      try {
+        const data = JSON.parse(html);
+        const produits = data.products || data.results || [];
+        return produits.some(p => {
+          const nom = (p.name || p.title || '').toLowerCase();
+          const estCoffret30 = nom.includes('30') && (nom.includes('dresseur') || nom.includes('etb'));
+          const enStock = p.inStock === true || p.availability === 'IN_STOCK' || p.stock > 0;
+          return estCoffret30 && enStock;
+        });
+      } catch (e) {
+        // 2. Repli sur l'analyse HTML (recherche listing classique)
+        const content = html.toLowerCase();
+        
+        const contient30 = content.includes('30');
+        const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
+        
+        if (!contient30 || !contientTermeCoffret) {
+          return false;
+        }
+
+        const estIndisponible = 
+          content.includes('indisponible en ligne') || 
+          content.includes('épuisé') || 
+          content.includes('victime de son succès');
+
+        const aBoutonAchat = 
+          content.includes('ajouter au panier') || 
+          content.includes('add-to-cart') ||
+          content.includes('in_stock');
+
+        return !estIndisponible && aBoutonAchat;
+      }
     }
   }
 ];
