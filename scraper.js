@@ -52,8 +52,9 @@ const SITES = [
         content.includes('"instock":true');
 
       return !estIndisponible && aBoutonAchat;
-    },
-    {
+    }
+  },
+  {
     nom: "CULTURA",
     url: "https://www.cultura.com/search/results?search_query=coffret%20dresseur%20d%27%C3%A9lite",
     verifier: (html) => {
