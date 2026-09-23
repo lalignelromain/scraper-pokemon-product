@@ -1,8 +1,6 @@
 const CANAL_NTFY = "stock-jouets-romain"; // Ton canal ntfy
 
-// Facultatif : Clé ScraperAPI pour bypasser Cloudflare/DataDome sur les sites bloqués.
-// Obtiens une clé gratuite sur https://www.scraperapi.com (1000 crédits/mois gratuits).
-// Si tu n'en as pas, laisse vide "" (le script fera un fetch classique).
+// Clé ScraperAPI récupérée depuis les secrets GitHub Actions
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || ""; 
 
 const SITES = [
@@ -34,7 +32,7 @@ const SITES = [
   },
   {
     nom: "LA GRANDE RÉCRÉ",
-    url: "https://www.lagranderecre.fr/marques/pokemon.html", // URL mise à jour (Page Pokémon globale)
+    url: "https://www.lagranderecre.fr/e-commerce/search?q=pokemon",
     useProxy: false,
     verifier: (html) => {
       const content = html.toLowerCase();
@@ -59,11 +57,11 @@ const SITES = [
   {
     nom: "CULTURA",
     url: "https://www.cultura.com/search/results?search_query=coffret%20dresseur%20d%27%C3%A9lite",
-    useProxy: true, // Protection Cloudflare
+    useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
 
-      // Exclure vendeurs tiers
+      // Filtre anti-marketplace
       if (content.includes('vendu et expédié par') && !content.includes('vendu par cultura')) {
         return false;
       }
@@ -92,10 +90,11 @@ const SITES = [
   {
     nom: "CARREFOUR",
     url: "https://www.carrefour.fr/s?q=coffret+dresseur+d+elite+30",
-    useProxy: true, // Protection DataDome / Cloudflare
+    useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
 
+      // Filtre anti-marketplace
       if (content.includes('vendu et expédié par') && !content.includes('carrefour')) {
         return false;
       }
@@ -124,11 +123,11 @@ const SITES = [
   {
     nom: "E.LECLERC",
     url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
-    useProxy: true, // Protection Cloudflare
+    useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
 
-      // Anti-marketplace
+      // Filtre anti-marketplace
       if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) {
         return false;
       }
@@ -249,9 +248,9 @@ async function verifierTousLesStocks() {
     try {
       let targetUrl = site.url;
 
-      // Si le site requiert un bypass et qu'une clé ScraperAPI est configurée
+      // Utilisation des paramètres avancés ScraperAPI pour bypasser le 403
       if (site.useProxy && SCRAPER_API_KEY) {
-        targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true`;
+        targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true&country_code=fr`;
       }
 
       const response = await fetch(targetUrl, {
@@ -288,7 +287,7 @@ async function verifierTousLesStocks() {
   await envoyerHeartbeat(SITES.length, erreursRunCount);
 }
 
-// EXÉCUTION ASYNCHRONE SÉCURISÉE (Obligatoire pour que Node.js attende la fin)
+// Bloque l'arrêt de Node.js jusqu'à la fin complète des requêtes ntfy
 (async () => {
   await verifierTousLesStocks();
 })();
