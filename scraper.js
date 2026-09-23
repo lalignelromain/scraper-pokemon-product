@@ -30,7 +30,6 @@ const SITES = [
     verifier: (html) => {
       const content = html.toLowerCase();
       
-      // 1. Détection des mots-clés du produit dans le listing
       const contient30 = content.includes('30');
       const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
       const produitTrouve = contient30 && contientTermeCoffret;
@@ -39,13 +38,11 @@ const SITES = [
         return false;
       }
 
-      // 2. Vérification de la disponibilité
       const estIndisponible = 
         content.includes('victime de son succès') || 
         content.includes('épuisé en ligne') || 
         content.includes('indisponible');
 
-      // 3. Fallback d'état pour rendu dynamique (React/Vue/SSR/State JSON)
       const aBoutonAchat = 
         content.includes('add-to-cart') || 
         content.includes('ajouter au panier') || 
@@ -58,20 +55,30 @@ const SITES = [
     nom: "CULTURA",
     url: "https://www.cultura.com/search/results?search_query=coffret%20dresseur%20d%27%C3%A9lite",
     verifier: (html) => {
-      // 1. Essai de lecture au format JSON (si l'endpoint bascule sur l'API)
+      const content = html.toLowerCase();
+
+      // 1. Filtre anti-marketplace / vendeurs partenaires Cultura
+      const estVendeurTiers = 
+        content.includes('vendu et expédié par') && !content.includes('vendu par cultura') ||
+        content.includes('vendeur partenaire');
+
+      if (estVendeurTiers && !content.includes('vendu par cultura')) {
+        return false;
+      }
+
+      // 2. Parsing JSON si endpoint API
       try {
         const data = JSON.parse(html);
         const produits = data.products || data.results || [];
         return produits.some(p => {
           const nom = (p.name || p.title || '').toLowerCase();
           const estCoffret30 = nom.includes('30') && (nom.includes('dresseur') || nom.includes('etb'));
+          const estVendeurOfficiel = !p.seller || p.seller.name?.toLowerCase().includes('cultura');
           const enStock = p.inStock === true || p.availability === 'IN_STOCK' || p.stock > 0;
-          return estCoffret30 && enStock;
+          return estCoffret30 && estVendeurOfficiel && enStock;
         });
       } catch (e) {
-        // 2. Repli sur l'analyse HTML (recherche listing classique)
-        const content = html.toLowerCase();
-        
+        // 3. Analysis HTML
         const contient30 = content.includes('30');
         const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
         
@@ -97,20 +104,31 @@ const SITES = [
     nom: "CARREFOUR",
     url: "https://www.carrefour.fr/s?q=coffret+dresseur+d+elite+30",
     verifier: (html) => {
-      // 1. Essai de lecture via données JSON/API de recherche
+      const content = html.toLowerCase();
+
+      // 1. Filtre anti-marketplace / vendeurs partenaires Carrefour
+      const estVendeurTiers = 
+        content.includes('vendu et expédié par') && !content.includes('carrefour') ||
+        content.includes('vendeur partenaire') ||
+        content.includes('marketplace');
+
+      if (estVendeurTiers && !content.includes('vendu par carrefour')) {
+        return false;
+      }
+
+      // 2. Parsing JSON si endpoint API
       try {
         const data = JSON.parse(html);
         const produits = data.products || data.results || data.items || [];
         return produits.some(p => {
           const nom = (p.title || p.name || p.label || '').toLowerCase();
           const estCoffret30 = (nom.includes('30') || nom.includes('30e')) && (nom.includes('dresseur') || nom.includes('etb'));
+          const estVendeurOfficiel = !p.seller || p.seller.name?.toLowerCase().includes('carrefour');
           const enStock = p.availability === 'IN_STOCK' || p.inStock === true || (p.offers && p.offers.some(o => o.availability?.includes('InStock')));
-          return estCoffret30 && enStock;
+          return estCoffret30 && estVendeurOfficiel && enStock;
         });
       } catch (e) {
-        // 2. Repli sur l'analyse HTML de la page de recherche
-        const content = html.toLowerCase();
-        
+        // 3. Analysis HTML
         const contient30 = content.includes('30') || content.includes('30e');
         const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
         
@@ -131,6 +149,52 @@ const SITES = [
           content.includes('add-to-cart');
 
         return !estIndisponible && aBoutonAchat;
+      }
+    }
+  },
+  {
+    nom: "E.LECLERC",
+    url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
+    verifier: (html) => {
+      const content = html.toLowerCase();
+
+      // 1. Exclure d'office les vendeurs tiers marketplace
+      const estVendeurTiers = 
+        content.includes('vendu et expédié par') && !content.includes('e.leclerc') ||
+        (content.includes('vendu par') && !content.includes('vendu par e.leclerc')) ||
+        content.includes('marketplace');
+
+      if (estVendeurTiers) {
+        return false;
+      }
+
+      // 2. Vérification JSON (données structurées / SSR)
+      try {
+        const data = JSON.parse(html);
+        const offers = data.offers || (data.mainEntity && data.mainEntity.offers) || [];
+        const offersList = Array.isArray(offers) ? offers : [offers];
+        
+        return offersList.some(o => {
+          const estVendeurOfficiel = !o.seller || o.seller.name?.toLowerCase().includes('leclerc');
+          const enStock = o.availability === 'https://schema.org/InStock' || o.availability === 'InStock' || o.inStock === true;
+          return estVendeurOfficiel && enStock;
+        });
+      } catch (e) {
+        // 3. Repli HTML
+        const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
+        if (!contientTermeCoffret) return false;
+
+        const estIndisponible = 
+          content.includes('indisponible') || 
+          content.includes('épuisé') || 
+          content.includes('non disponible en ligne') ||
+          content.includes('outofstock');
+
+        const aBoutonAchatOfficiel = 
+          (content.includes('ajouter au panier') || content.includes('schema.org/instock')) &&
+          (content.includes('retrait en magasin') || content.includes('expédié par e.leclerc') || content.includes('vendu par e.leclerc'));
+
+        return !estIndisponible && aBoutonAchatOfficiel;
       }
     }
   }
