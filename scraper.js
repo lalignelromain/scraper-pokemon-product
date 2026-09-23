@@ -28,18 +28,22 @@ const SITES = [
 
 async function envoyerAlerte(nomSite, url) {
   const titreClean = `PRODUIT EN STOCK SUR ${nomSite} !`;
-  const message = `⚠️ Le produit est disponible sur ${nomSite} ! Cliquez pour ouvrir la page.`;
+  const messageText = `⚠️ Le produit est disponible sur ${nomSite} ! Cliquez pour ouvrir la page.`;
 
   try {
-    await fetch(`https://ntfy.sh/${CANAL_NTFY}`, {
+    await fetch("https://ntfy.sh/", {
       method: "POST",
       headers: {
-        "Title": titreClean,
-        "Priority": "high",
-        "Tags": "warning,shopping",
-        "Click": url
+        "Content-Type": "application/json"
       },
-      body: message
+      body: JSON.stringify({
+        topic: CANAL_NTFY,
+        title: titreClean,
+        message: messageText,
+        click: url,
+        priority: 4,
+        tags: ["warning", "shopping"]
+      })
     });
     console.log(`Notification envoyée pour ${nomSite}`);
   } catch (err) {
