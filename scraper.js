@@ -12,6 +12,7 @@ const SITES = [
       return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
     }
   },
+  /* 
   {
     nom: "KING JOUET",
     url: "https://www.king-jouet.com/recherche?q=pokemon+30+ans+coffret+dresseur",
@@ -21,6 +22,7 @@ const SITES = [
       return content.includes('30') && content.includes('dresseur') && !content.includes('aucun résultat');
     }
   },
+  */
   {
     nom: "JOUECLUB",
     url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
