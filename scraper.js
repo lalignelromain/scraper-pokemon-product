@@ -23,6 +23,36 @@ const SITES = [
       const boutonActif = html.includes('c-product-add-to-cart') && !html.includes('Indisponible');
       return enStockSchema || boutonActif;
     }
+  },
+  {
+    nom: "LA GRANDE RÉCRÉ",
+    url: "https://www.lagranderecre.fr/jeux-de-societe/cartes-a-collectionner.html",
+    verifier: (html) => {
+      const content = html.toLowerCase();
+      
+      // 1. Détection des mots-clés du produit dans le listing
+      const contient30 = content.includes('30');
+      const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
+      const produitTrouve = contient30 && contientTermeCoffret;
+
+      if (!produitTrouve) {
+        return false;
+      }
+
+      // 2. Vérification de la disponibilité
+      const estIndisponible = 
+        content.includes('victime de son succès') || 
+        content.includes('épuisé en ligne') || 
+        content.includes('indisponible');
+
+      // 3. Fallback d'état pour rendu dynamique (React/Vue/SSR/State JSON)
+      const aBoutonAchat = 
+        content.includes('add-to-cart') || 
+        content.includes('ajouter au panier') || 
+        content.includes('"instock":true');
+
+      return !estIndisponible && aBoutonAchat;
+    }
   }
 ];
 
@@ -41,6 +71,37 @@ function getRandomUserAgent() {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Log de santé automatique (Exécuté à 09h00 et 18h00 heure de Paris)
+async function envoyerHeartbeat(nbSites, nbErreurs) {
+  const maintenant = new Date();
+  
+  // Conversion explicite sur le fuseau horaire français
+  const heureParis = parseInt(maintenant.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', hour12: false }), 10);
+  const minutesParis = parseInt(maintenant.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', minute: '2-digit' }), 10);
+
+  // Se déclenche sur le premier passage de la tranche (entre :00 et :05)
+  const estCrenauCible = (heureParis === 9 || heureParis === 18) && minutesParis < 5;
+
+  if (estCrenauCible) {
+    try {
+      await fetch("https://ntfy.sh/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: CANAL_NTFY,
+          title: `🟢 Heartbeat : Scraper Opérationnel (${heureParis}h00)`,
+          message: `Rapport de santé quotidien.\n• Sites surveillés : ${nbSites}\n• Erreurs lors du run : ${nbErreurs}`,
+          priority: 1,
+          tags: ["green_heart", "robot"]
+        })
+      });
+      console.log(`Notification Heartbeat de ${heureParis}h envoyée.`);
+    } catch (err) {
+      console.error("Erreur envoi heartbeat:", err);
+    }
+  }
 }
 
 // Alerte Stock (Haute priorité, lien cliquable, icône cadeau/shopping)
@@ -85,6 +146,8 @@ async function envoyerAlerteErreur(nomSite, detailErreur) {
 }
 
 async function verifierTousLesStocks() {
+  let erreursRunCount = 0;
+
   for (let i = 0; i < SITES.length; i++) {
     const site = SITES[i];
 
@@ -113,6 +176,7 @@ async function verifierTousLesStocks() {
       });
 
       if (!response.ok) {
+        erreursRunCount++;
         const msgHttp = `Erreur HTTP ${response.status}`;
         console.log(`[${msgHttp}] ${site.nom}`);
         await envoyerAlerteErreur(site.nom, msgHttp);
@@ -127,10 +191,14 @@ async function verifierTousLesStocks() {
         console.log(`[Rupture] ${site.nom}`);
       }
     } catch (e) {
+      erreursRunCount++;
       console.log(`[Erreur] ${site.nom} : ${e.message}`);
       await envoyerAlerteErreur(site.nom, e.message);
     }
   }
+
+  // Contrôle du Heartbeat (envoyé si on est à 9h00 ou 18h00 heure française)
+  await envoyerHeartbeat(SITES.length, erreursRunCount);
 }
 
 verifierTousLesStocks();
