@@ -1,9 +1,15 @@
 const CANAL_NTFY = "stock-jouets-romain"; // Ton canal ntfy
 
+// Facultatif : Clé ScraperAPI pour bypasser Cloudflare/DataDome sur les sites bloqués.
+// Obtiens une clé gratuite sur https://www.scraperapi.com (1000 crédits/mois gratuits).
+// Si tu n'en as pas, laisse vide "" (le script fera un fetch classique).
+const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || ""; 
+
 const SITES = [
   {
     nom: "SMYTHS TOYS",
     url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821",
+    useProxy: false,
     verifier: (html) => {
       return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
     }
@@ -11,6 +17,7 @@ const SITES = [
   {
     nom: "KING JOUET",
     url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm",
+    useProxy: false,
     verifier: (html) => {
       return !html.includes("Zut") && !html.includes("Epuisé");
     }
@@ -18,6 +25,7 @@ const SITES = [
   {
     nom: "JOUECLUB",
     url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
+    useProxy: false,
     verifier: (html) => {
       const enStockSchema = html.includes('schema.org/InStock');
       const boutonActif = html.includes('c-product-add-to-cart') && !html.includes('Indisponible');
@@ -26,17 +34,14 @@ const SITES = [
   },
   {
     nom: "LA GRANDE RÉCRÉ",
-    url: "https://www.lagranderecre.fr/jeux-de-societe/cartes-a-collectionner.html",
+    url: "https://www.lagranderecre.fr/marques/pokemon.html", // URL mise à jour (Page Pokémon globale)
+    useProxy: false,
     verifier: (html) => {
       const content = html.toLowerCase();
-      
       const contient30 = content.includes('30');
       const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-      const produitTrouve = contient30 && contientTermeCoffret;
-
-      if (!produitTrouve) {
-        return false;
-      }
+      
+      if (!contient30 || !contientTermeCoffret) return false;
 
       const estIndisponible = 
         content.includes('victime de son succès') || 
@@ -54,19 +59,15 @@ const SITES = [
   {
     nom: "CULTURA",
     url: "https://www.cultura.com/search/results?search_query=coffret%20dresseur%20d%27%C3%A9lite",
+    useProxy: true, // Protection Cloudflare
     verifier: (html) => {
       const content = html.toLowerCase();
 
-      // 1. Filtre anti-marketplace / vendeurs partenaires Cultura
-      const estVendeurTiers = 
-        content.includes('vendu et expédié par') && !content.includes('vendu par cultura') ||
-        content.includes('vendeur partenaire');
-
-      if (estVendeurTiers && !content.includes('vendu par cultura')) {
+      // Exclure vendeurs tiers
+      if (content.includes('vendu et expédié par') && !content.includes('vendu par cultura')) {
         return false;
       }
 
-      // 2. Parsing JSON si endpoint API
       try {
         const data = JSON.parse(html);
         const produits = data.products || data.results || [];
@@ -78,24 +79,12 @@ const SITES = [
           return estCoffret30 && estVendeurOfficiel && enStock;
         });
       } catch (e) {
-        // 3. Analysis HTML
         const contient30 = content.includes('30');
         const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-        
-        if (!contient30 || !contientTermeCoffret) {
-          return false;
-        }
+        if (!contient30 || !contientTermeCoffret) return false;
 
-        const estIndisponible = 
-          content.includes('indisponible en ligne') || 
-          content.includes('épuisé') || 
-          content.includes('victime de son succès');
-
-        const aBoutonAchat = 
-          content.includes('ajouter au panier') || 
-          content.includes('add-to-cart') ||
-          content.includes('in_stock');
-
+        const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
+        const aBoutonAchat = content.includes('ajouter au panier') || content.includes('add-to-cart');
         return !estIndisponible && aBoutonAchat;
       }
     }
@@ -103,20 +92,14 @@ const SITES = [
   {
     nom: "CARREFOUR",
     url: "https://www.carrefour.fr/s?q=coffret+dresseur+d+elite+30",
+    useProxy: true, // Protection DataDome / Cloudflare
     verifier: (html) => {
       const content = html.toLowerCase();
 
-      // 1. Filtre anti-marketplace / vendeurs partenaires Carrefour
-      const estVendeurTiers = 
-        content.includes('vendu et expédié par') && !content.includes('carrefour') ||
-        content.includes('vendeur partenaire') ||
-        content.includes('marketplace');
-
-      if (estVendeurTiers && !content.includes('vendu par carrefour')) {
+      if (content.includes('vendu et expédié par') && !content.includes('carrefour')) {
         return false;
       }
 
-      // 2. Parsing JSON si endpoint API
       try {
         const data = JSON.parse(html);
         const produits = data.products || data.results || data.items || [];
@@ -124,30 +107,16 @@ const SITES = [
           const nom = (p.title || p.name || p.label || '').toLowerCase();
           const estCoffret30 = (nom.includes('30') || nom.includes('30e')) && (nom.includes('dresseur') || nom.includes('etb'));
           const estVendeurOfficiel = !p.seller || p.seller.name?.toLowerCase().includes('carrefour');
-          const enStock = p.availability === 'IN_STOCK' || p.inStock === true || (p.offers && p.offers.some(o => o.availability?.includes('InStock')));
+          const enStock = p.availability === 'IN_STOCK' || p.inStock === true;
           return estCoffret30 && estVendeurOfficiel && enStock;
         });
       } catch (e) {
-        // 3. Analysis HTML
         const contient30 = content.includes('30') || content.includes('30e');
         const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-        
-        if (!contient30 || !contientTermeCoffret) {
-          return false;
-        }
+        if (!contient30 || !contientTermeCoffret) return false;
 
-        const estIndisponible = 
-          content.includes('indisponible') || 
-          content.includes('outofstock') || 
-          content.includes('épuisé') || 
-          content.includes('victime de son succès');
-
-        const aBoutonAchat = 
-          content.includes('instock') || 
-          content.includes('ajouter au panier') || 
-          content.includes('ajouter au drive') ||
-          content.includes('add-to-cart');
-
+        const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
+        const aBoutonAchat = content.includes('ajouter au panier') || content.includes('add-to-cart');
         return !estIndisponible && aBoutonAchat;
       }
     }
@@ -155,44 +124,32 @@ const SITES = [
   {
     nom: "E.LECLERC",
     url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
+    useProxy: true, // Protection Cloudflare
     verifier: (html) => {
       const content = html.toLowerCase();
 
-      // 1. Exclure d'office les vendeurs tiers marketplace
-      const estVendeurTiers = 
-        content.includes('vendu et expédié par') && !content.includes('e.leclerc') ||
-        (content.includes('vendu par') && !content.includes('vendu par e.leclerc')) ||
-        content.includes('marketplace');
-
-      if (estVendeurTiers) {
+      // Anti-marketplace
+      if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) {
         return false;
       }
 
-      // 2. Vérification JSON (données structurées / SSR)
       try {
         const data = JSON.parse(html);
         const offers = data.offers || (data.mainEntity && data.mainEntity.offers) || [];
         const offersList = Array.isArray(offers) ? offers : [offers];
-        
         return offersList.some(o => {
           const estVendeurOfficiel = !o.seller || o.seller.name?.toLowerCase().includes('leclerc');
-          const enStock = o.availability === 'https://schema.org/InStock' || o.availability === 'InStock' || o.inStock === true;
+          const enStock = o.availability === 'https://schema.org/InStock' || o.availability === 'InStock';
           return estVendeurOfficiel && enStock;
         });
       } catch (e) {
-        // 3. Repli HTML
         const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
         if (!contientTermeCoffret) return false;
 
-        const estIndisponible = 
-          content.includes('indisponible') || 
-          content.includes('épuisé') || 
-          content.includes('non disponible en ligne') ||
-          content.includes('outofstock');
-
+        const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
         const aBoutonAchatOfficiel = 
           (content.includes('ajouter au panier') || content.includes('schema.org/instock')) &&
-          (content.includes('retrait en magasin') || content.includes('expédié par e.leclerc') || content.includes('vendu par e.leclerc'));
+          (content.includes('retrait en magasin') || content.includes('vendu par e.leclerc'));
 
         return !estIndisponible && aBoutonAchatOfficiel;
       }
@@ -200,13 +157,9 @@ const SITES = [
   }
 ];
 
-// Liste de User-Agents récents pour varier les signatures
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0'
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
 ];
 
 function getRandomUserAgent() {
@@ -217,15 +170,11 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Log de santé automatique (Exécuté à 09h00 et 18h00 heure de Paris)
 async function envoyerHeartbeat(nbSites, nbErreurs) {
   const maintenant = new Date();
-  
-  // Conversion explicite sur le fuseau horaire français
   const heureParis = parseInt(maintenant.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', hour12: false }), 10);
   const minutesParis = parseInt(maintenant.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', minute: '2-digit' }), 10);
 
-  // Se déclenche sur le premier passage de la tranche (entre :00 et :05)
   const estCrenauCible = (heureParis === 9 || heureParis === 18) && minutesParis < 5;
 
   if (estCrenauCible) {
@@ -248,7 +197,6 @@ async function envoyerHeartbeat(nbSites, nbErreurs) {
   }
 }
 
-// Alerte Stock (Haute priorité, lien cliquable, icône cadeau/shopping)
 async function envoyerAlerteStock(nomSite, url) {
   try {
     await fetch("https://ntfy.sh/", {
@@ -269,7 +217,6 @@ async function envoyerAlerteStock(nomSite, url) {
   }
 }
 
-// Alerte Panne / Erreur Technique (Basse priorité, pas de lien, icône outil/erreur)
 async function envoyerAlerteErreur(nomSite, detailErreur) {
   try {
     await fetch("https://ntfy.sh/", {
@@ -295,27 +242,24 @@ async function verifierTousLesStocks() {
   for (let i = 0; i < SITES.length; i++) {
     const site = SITES[i];
 
-    // Délai aléatoire entre 2 et 5 secondes entre chaque site (sauf le premier)
     if (i > 0) {
-      const pauseMs = Math.floor(Math.random() * 3000) + 2000;
-      await sleep(pauseMs);
+      await sleep(Math.floor(Math.random() * 3000) + 2000);
     }
 
     try {
-      const response = await fetch(site.url, {
-        headers: {
+      let targetUrl = site.url;
+
+      // Si le site requiert un bypass et qu'une clé ScraperAPI est configurée
+      if (site.useProxy && SCRAPER_API_KEY) {
+        targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true`;
+      }
+
+      const response = await fetch(targetUrl, {
+        headers: site.useProxy && SCRAPER_API_KEY ? {} : {
           'User-Agent': getRandomUserAgent(),
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Referer': 'https://www.google.com/',
-          'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-          'Sec-Ch-Ua-Mobile': '?0',
-          'Sec-Ch-Ua-Platform': '"Windows"',
-          'Sec-Fetch-Dest': 'document',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'cross-site',
-          'Sec-Fetch-User': '?1',
-          'Upgrade-Insecure-Requests': '1'
+          'Referer': 'https://www.google.com/'
         }
       });
 
@@ -341,8 +285,10 @@ async function verifierTousLesStocks() {
     }
   }
 
-  // Contrôle du Heartbeat (envoyé si on est à 9h00 ou 18h00 heure française)
   await envoyerHeartbeat(SITES.length, erreursRunCount);
 }
 
-verifierTousLesStocks();
+// EXÉCUTION ASYNCHRONE SÉCURISÉE (Obligatoire pour que Node.js attende la fin)
+(async () => {
+  await verifierTousLesStocks();
+})();
