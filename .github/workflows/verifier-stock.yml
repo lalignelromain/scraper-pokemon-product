@@ -23,23 +23,22 @@ jobs:
       - name: Configurer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
-      - name: Installer les dépendances
-        run: npm install cheerio
+      - name: Initialiser les fichiers JSON et installer cheerio
+        run: |
+          [ -f logs_erreurs.json ] || echo "[]" > logs_erreurs.json
+          [ -f stats_horaires.json ] || echo "{}" > stats_horaires.json
+          npm install cheerio
 
       - name: Exécuter le script de vérification
         env:
           SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
         run: node scraper.js
 
-      - name: Commit et Push des logs et données de timing
-        if: always() # S'exécute même si le script rencontre un problème
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          touch logs_erreurs.json stats_horaires.json
-          git add logs_erreurs.json stats_horaires.json
-          git commit -m "chore(data): mise a jour des logs et stats horaires" || exit 0
-          git pull --rebase origin main
-          git push
+      - name: Sauvegarder les logs et statistiques
+        if: always()
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): mise a jour des logs et stats horaires"
+          file_pattern: "logs_erreurs.json stats_horaires.json"
