@@ -50,7 +50,7 @@ const SITES = [
   {
     nom: "KING JOUET",
     url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
-    useProxy: false,
+    useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
       if (content.includes("aucun résultat n'a été trouvé")) return false;
@@ -178,8 +178,7 @@ async function verifierTousLesStocks() {
         let targetUrl = site.url;
 
         if (site.useProxy && SCRAPER_API_KEY) {
-          // Utilisation de ScraperAPI en HTML brut (sans render=true)
-          let extraParams = "&country_code=fr";
+          let extraParams = "&country_code=fr&keep_headers=true";
           if (site.nom === "KING JOUET" || site.nom === "E.LECLERC") {
             extraParams += "&premium=true";
           }
@@ -187,7 +186,7 @@ async function verifierTousLesStocks() {
         }
 
         response = await fetch(targetUrl, {
-          headers: site.useProxy && SCRAPER_API_KEY ? {} : {
+          headers: {
             'User-Agent': getRandomUserAgent(),
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
