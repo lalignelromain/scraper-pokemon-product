@@ -92,19 +92,13 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
   
   let conteneurHtml = "";
   if (site.nom === "KING JOUET") {
-    conteneurHtml = $('.product-list').html();
-    if (!conteneurHtml) conteneurHtml = $('main').html();
-    if (!conteneurHtml) conteneurHtml = html;
+    conteneurHtml = $('.product-list').html() \vert{}\vert{}$('main').html() || html;
   } else if (site.nom === "E.LECLERC") {
-    conteneurHtml = $('script[type="application/ld+json"]').html();
-    if (!conteneurHtml) conteneurHtml = $('main').html();
-    if (!conteneurHtml) conteneurHtml = html;
+    conteneurHtml = $('script[type="application/ld+json"]').html() \vert{}\vert{} $('main').html() || html;
   } else if (site.nom === "JOUECLUB") {
-    conteneurHtml = $('.c-product-detail').html();
-    if (!conteneurHtml) conteneurHtml = $('main').html();
-    if (!conteneurHtml) conteneurHtml = html;
+    conteneurHtml = $('.c-product-detail').html() \vert{}\vert{}$('main').html() || html;
   } else {
-    // Ciblage précis pour Smyths Toys pour éviter les faux positifs liés aux scripts/compteurs dynamiques
+    // Ciblage précis pour Smyths Toys sans double pipe problématique
     conteneurHtml = $('button#add-to-cart').html() \vert{}\vert{} $('.product-title').html() || html;
   }
 
