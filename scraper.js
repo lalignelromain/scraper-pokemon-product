@@ -18,9 +18,22 @@ const SITES = [
     useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
-      const estIndisponible = content.includes("cet article n'est plus disponible") || content.includes('épuisé');
-      const aBoutonAchat = content.includes('ajouter au panier') || content.includes('panier');
-      return aBoutonAchat && !estIndisponible;
+      
+      // Mots-clés explicites d'indisponibilité sur la fiche produit
+      const estIndisponible = 
+        content.includes("cet article n'est plus disponible") || 
+        content.includes('épuisé') || 
+        content.includes('indisponible') ||
+        content.includes('bientôt disponible');
+
+      if (estIndisponible) {
+        return false;
+      }
+
+      // On cherche explicitement le bouton d'action d'achat (et non le header "panier")
+      const aBoutonAchat = content.includes('ajouter au panier');
+
+      return aBoutonAchat;
     }
   },
   {
