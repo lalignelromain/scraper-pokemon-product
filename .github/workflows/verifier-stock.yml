@@ -2,8 +2,11 @@ name: Verification Stock Jouets
 
 on:
   schedule:
-    # S'exécute automatiquement toutes les 5 minutes
+    # S'exécute automatiquement toutes les 5 minutes en secours
     - cron: '*/5 * * * *'
+  repository_dispatch:
+    # Permet le déclenchement instantané via le Webhook cron-job.org
+    types: [run-scraper]
   workflow_dispatch: # Permet d'exécuter le script à la main pour tester
 
 jobs:
@@ -17,7 +20,9 @@ jobs:
       - name: Configurer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Exécuter le script de vérification
+        env:
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
         run: node scraper.js
