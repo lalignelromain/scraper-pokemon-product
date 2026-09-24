@@ -11,17 +11,6 @@ const SITES = [
     verifier: (html) => html.includes('add-to-cart') && !html.includes('cursor-not-allowed')
   },
   {
-    nom: "KING JOUET",
-    url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
-    useProxy: true,
-    verifier: (html) => {
-      const content = html.toLowerCase();
-      if (content.includes("aucun résultat n'a été trouvé")) return false;
-      const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-      return keywords.some(kw => content.includes(kw));
-    }
-  },
-  {
     nom: "JOUECLUB",
     url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
     useProxy: false,
@@ -56,6 +45,17 @@ const SITES = [
           (content.includes('retrait en magasin') || content.includes('vendu par e.leclerc'));
         return !estIndisponible && aBoutonAchatOfficiel;
       }
+    }
+  },
+  {
+    nom: "KING JOUET",
+    url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
+    useProxy: true,
+    verifier: (html) => {
+      const content = html.toLowerCase();
+      if (content.includes("aucun résultat n'a été trouvé")) return false;
+      const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+      return keywords.some(kw => content.includes(kw));
     }
   }
 ];
