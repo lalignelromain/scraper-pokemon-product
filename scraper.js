@@ -81,7 +81,6 @@ function getHash(text) {
   return crypto.createHash('md5').update(text).digest('hex');
 }
 
-// Fonction sous-marine : analyse HTTP + DOM pour tracker les heures de MAJ
 function enregistrerTimingEtDom(site, responseHeaders, html) {
   let stats = {};
   if (fs.existsSync(TIMING_FILE)) {
@@ -91,7 +90,6 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
   const maintenant = new Date().toISOString();
   const $ = cheerio.load(html);
   
-  // 1. Extraction d'une zone clé selon le site
   let conteneurHtml = "";
   if (site.nom === "KING JOUET") conteneurHtml = $('.product-list').html() \vert{}\vert{}$('main').html() || html;
   else if (site.nom === "E.LECLERC") conteneurHtml = $('script[type="application/ld+json"]').html() \vert{}\vert{} $('main').html() || html;
@@ -108,7 +106,6 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
       historiqueMisesAJour: []
     };
   } else {
-    // Si le hash du DOM a changé, on note l'heure exacte
     if (stats[site.nom].dernierHash && stats[site.nom].dernierHash !== currentHash) {
       console.log(`📌 [MAJ DOM DÉTECTÉE] ${site.nom} à ${maintenant}`);
       stats[site.nom].historiqueMisesAJour.push({
@@ -121,7 +118,6 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     stats[site.nom].derniereVerif = maintenant;
   }
 
-  // On garde les 50 derniers événements
   if (stats[site.nom].historiqueMisesAJour.length > 50) {
     stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
   }
@@ -233,7 +229,11 @@ async function verifierTousLesStocks() {
           let extraParams = "&country_code=fr&keep_headers=true";
           
           if (site.nom === "KING JOUET") {
-            extraParams += "&premium=true&render=true";
+            if (tentative === 1) {
+              extraParams += "&premium=true&render=true&wait_for_selector=.product-list";
+            } else {
+              extraParams += "&premium=true";
+            }
           } else if (site.nom === "E.LECLERC") {
             extraParams += "&premium=true";
           }
@@ -287,7 +287,6 @@ async function verifierTousLesStocks() {
 
       const html = await response.text();
 
-      // Exécution de l'analyse silencieuse DOM + En-têtes HTTP
       enregistrerTimingEtDom(site, response.headers, html);
 
       if (site.verifier(html)) {
