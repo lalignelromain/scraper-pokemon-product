@@ -9,6 +9,9 @@ on:
     types: [run-scraper]
   workflow_dispatch: # Permet d'exécuter le script à la main pour tester
 
+permissions:
+  contents: write # Donne accès au git push pour sauvegarder les logs
+
 jobs:
   check-stock:
     runs-on: ubuntu-latest
