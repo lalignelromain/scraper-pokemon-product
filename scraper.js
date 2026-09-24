@@ -14,26 +14,23 @@ const SITES = [
   },
   {
     nom: "KING JOUET",
-    url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm",
+    url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
     useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
       
-      // Mots-clés explicites d'indisponibilité sur la fiche produit
-      const estIndisponible = 
-        content.includes("cet article n'est plus disponible") || 
-        content.includes('épuisé') || 
-        content.includes('indisponible') ||
-        content.includes('bientôt disponible');
-
-      if (estIndisponible) {
+      // 1. Si la catégorie est totalement vide de produits
+      if (content.includes("aucun résultat n'a été trouvé")) {
         return false;
       }
 
-      // On cherche explicitement le bouton d'action d'achat (et non le header "panier")
-      const aBoutonAchat = content.includes('ajouter au panier');
+      // 2. Mots-clés cibles à détecter dans la page de catégorie
+      const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+      
+      // Doit contenir au moins un mot-clé ET ne pas présenter de message d'erreur d'absence
+      const contientMotCleCible = keywords.some(kw => content.includes(kw));
 
-      return aBoutonAchat;
+      return contientMotCleCible;
     }
   },
   {
