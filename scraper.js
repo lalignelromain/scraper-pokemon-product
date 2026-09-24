@@ -1,7 +1,11 @@
 const fs = require('fs');
-const CANAL_NTFY = "stock-jouets-romain"; // Ton canal ntfy
+const crypto = require('crypto');
+const cheerio = require('cheerio');
+
+const CANAL_NTFY = "stock-jouets-romain";
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || ""; 
 const LOG_FILE = 'logs_erreurs.json';
+const TIMING_FILE = 'stats_horaires.json';
 
 const SITES = [
   {
@@ -73,14 +77,62 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getHash(text) {
+  return crypto.createHash('md5').update(text).digest('hex');
+}
+
+// Fonction sous-marine : analyse HTTP + DOM pour tracker les heures de MAJ
+function enregistrerTimingEtDom(site, responseHeaders, html) {
+  let stats = {};
+  if (fs.existsSync(TIMING_FILE)) {
+    try { stats = JSON.parse(fs.readFileSync(TIMING_FILE, 'utf8')); } catch (e) { stats = {}; }
+  }
+
+  const maintenant = new Date().toISOString();
+  const $ = cheerio.load(html);
+  
+  // 1. Extraction d'une zone clé selon le site
+  let conteneurHtml = "";
+  if (site.nom === "KING JOUET") conteneurHtml = $('.product-list').html() \vert{}\vert{}$('main').html() || html;
+  else if (site.nom === "E.LECLERC") conteneurHtml = $('script[type="application/ld+json"]').html() \vert{}\vert{} $('main').html() || html;
+  else if (site.nom === "JOUECLUB") conteneurHtml = $('.c-product-detail').html() \vert{}\vert{}$('main').html() || html;
+  else conteneurHtml = $('.product-detail').html() \vert{}\vert{}$('main').html() || html;
+
+  const currentHash = getHash(conteneurHtml);
+  const serverDate = responseHeaders.get('date') || responseHeaders.get('last-modified') || null;
+
+  if (!stats[site.nom]) {
+    stats[site.nom] = {
+      dernierHash: currentHash,
+      derniereVerif: maintenant,
+      historiqueMisesAJour: []
+    };
+  } else {
+    // Si le hash du DOM a changé, on note l'heure exacte
+    if (stats[site.nom].dernierHash && stats[site.nom].dernierHash !== currentHash) {
+      console.log(`📌 [MAJ DOM DÉTECTÉE] ${site.nom} à ${maintenant}`);
+      stats[site.nom].historiqueMisesAJour.push({
+        timestampLocal: maintenant,
+        timestampServeur: serverDate,
+        type: "CHANGEMENT_DOM"
+      });
+      stats[site.nom].dernierHash = currentHash;
+    }
+    stats[site.nom].derniereVerif = maintenant;
+  }
+
+  // On garde les 50 derniers événements
+  if (stats[site.nom].historiqueMisesAJour.length > 50) {
+    stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
+  }
+
+  fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
+}
+
 function enregistrerErreur(site, statusHTTP, typeErreur, tentative) {
   let logs = [];
   if (fs.existsSync(LOG_FILE)) {
-    try {
-      logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'));
-    } catch (e) {
-      logs = [];
-    }
+    try { logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8')); } catch (e) { logs = []; }
   }
   const ilYADeuxDixQuatreHeures = Date.now() - (24 * 60 * 60 * 1000);
   logs = logs.filter(log => new Date(log.timestamp).getTime() > ilYADeuxDixQuatreHeures);
@@ -181,10 +233,8 @@ async function verifierTousLesStocks() {
           let extraParams = "&country_code=fr&keep_headers=true";
           
           if (site.nom === "KING JOUET") {
-            // Rendu JS activé spécifiquement pour King Jouet
             extraParams += "&premium=true&render=true";
           } else if (site.nom === "E.LECLERC") {
-            // Leclerc fonctionne parfaitement en HTTP rapide sans render=true
             extraParams += "&premium=true";
           }
           
@@ -236,6 +286,10 @@ async function verifierTousLesStocks() {
       }
 
       const html = await response.text();
+
+      // Exécution de l'analyse silencieuse DOM + En-têtes HTTP
+      enregistrerTimingEtDom(site, response.headers, html);
+
       if (site.verifier(html)) {
         console.log(`[STOCK DISPO] ${site.nom}`);
         await envoyerAlerteStock(site.nom, site.url);
