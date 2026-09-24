@@ -34,5 +34,32 @@
     "typeErreur": "HTTP_ERROR",
     "proxyUtilise": true,
     "tentative": 2
+  },
+  {
+    "timestamp": "2026-09-24T12:01:57.679Z",
+    "site": "E.LECLERC",
+    "url": "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
+    "statusHTTP": 500,
+    "typeErreur": "HTTP_ERROR",
+    "proxyUtilise": true,
+    "tentative": 1
+  },
+  {
+    "timestamp": "2026-09-24T12:03:49.972Z",
+    "site": "KING JOUET",
+    "url": "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
+    "statusHTTP": 500,
+    "typeErreur": "HTTP_ERROR",
+    "proxyUtilise": true,
+    "tentative": 1
+  },
+  {
+    "timestamp": "2026-09-24T12:04:49.063Z",
+    "site": "KING JOUET",
+    "url": "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
+    "statusHTTP": 500,
+    "typeErreur": "HTTP_ERROR",
+    "proxyUtilise": true,
+    "tentative": 2
   }
 ]
