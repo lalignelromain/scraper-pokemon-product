@@ -38,6 +38,8 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          touch logs_erreurs.json stats_horaires.json
           git add logs_erreurs.json stats_horaires.json
           git commit -m "chore(data): mise a jour des logs et stats horaires" || exit 0
+          git pull --rebase origin main
           git push
