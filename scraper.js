@@ -12,7 +12,6 @@ const SITES = [
       return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
     }
   },
-  /* 
   {
     nom: "KING JOUET",
     url: "https://www.king-jouet.com/recherche?q=pokemon+30+ans+coffret+dresseur",
@@ -22,7 +21,6 @@ const SITES = [
       return content.includes('30') && content.includes('dresseur') && !content.includes('aucun résultat');
     }
   },
-  */
   {
     nom: "JOUECLUB",
     url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
@@ -158,27 +156,51 @@ async function verifierTousLesStocks() {
       await sleep(Math.floor(Math.random() * 3000) + 2000);
     }
 
-    try {
-      let targetUrl = site.url;
+    let response = null;
+    let succesRequete = false;
+    const maxTentatives = site.useProxy ? 2 : 1; // 2 essais si proxy (pour lisser les 403 sporadiques)
 
-      if (site.useProxy && SCRAPER_API_KEY) {
-        targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true&country_code=fr`;
-      }
+    for (let tentative = 1; tentative <= maxTentatives; tentative++) {
+      try {
+        let targetUrl = site.url;
 
-      const response = await fetch(targetUrl, {
-        headers: site.useProxy && SCRAPER_API_KEY ? {} : {
-          'User-Agent': getRandomUserAgent(),
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-          'Referer': 'https://www.google.com/'
+        if (site.useProxy && SCRAPER_API_KEY) {
+          targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true&country_code=fr&_t=${Date.now()}`;
         }
-      });
 
-      if (!response.ok) {
+        response = await fetch(targetUrl, {
+          headers: site.useProxy && SCRAPER_API_KEY ? {} : {
+            'User-Agent': getRandomUserAgent(),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Referer': 'https://www.google.com/'
+          }
+        });
+
+        if (response.ok) {
+          succesRequete = true;
+          break; // Sort de la boucle de retry si c'est un succès
+        } else if (response.status === 403 && tentative < maxTentatives) {
+          console.log(`[403 Bloqué] ${site.nom} - Tentative ${tentative}/${maxTentatives}, nouvelle tentative avec une autre IP...`);
+          await sleep(4000); // Pause de 4 secondes avant de retenter
+        } else {
+          break; // Autre erreur HTTP ou dernière tentative échouée
+        }
+      } catch (e) {
+        if (tentative === maxTentatives) {
+          throw e;
+        }
+        console.log(`[Erreur Réseau] ${site.nom} - Tentative ${tentative}/${maxTentatives} : ${e.message}, nouveau test...`);
+        await sleep(3000);
+      }
+    }
+
+    try {
+      if (!succesRequete || !response.ok) {
         erreursRunCount++;
-        const msgHttp = `Erreur HTTP ${response.status}`;
-        console.log(`[${msgHttp}] ${site.nom}`);
-        await envoyerAlerteErreur(site.nom, msgHttp);
+        const statusErr = response ? `Erreur HTTP ${response.status}` : 'Erreur réseau';
+        console.log(`[${statusErr}] ${site.nom}`);
+        await envoyerAlerteErreur(site.nom, statusErr);
         continue;
       }
 
