@@ -14,11 +14,13 @@ const SITES = [
   },
   {
     nom: "KING JOUET",
-    url: "https://www.king-jouet.com/recherche?q=pokemon+30+ans+coffret+dresseur",
+    url: "https://www.king-jouet.com/jeu-jouet/jeux-societes/cartes-a-collectionner/ref-1034916-pokemon-30-ans-coffret-dresseur-d-elite.htm",
     useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
-      return content.includes('30') && content.includes('dresseur') && !content.includes('aucun résultat');
+      const estIndisponible = content.includes("cet article n'est plus disponible") || content.includes('épuisé');
+      const aBoutonAchat = content.includes('ajouter au panier') || content.includes('panier');
+      return aBoutonAchat && !estIndisponible;
     }
   },
   {
@@ -158,7 +160,7 @@ async function verifierTousLesStocks() {
 
     let response = null;
     let succesRequete = false;
-    const maxTentatives = site.useProxy ? 2 : 1; // 2 essais si proxy (pour lisser les 403 sporadiques)
+    const maxTentatives = site.useProxy ? 2 : 1;
 
     for (let tentative = 1; tentative <= maxTentatives; tentative++) {
       try {
@@ -179,12 +181,12 @@ async function verifierTousLesStocks() {
 
         if (response.ok) {
           succesRequete = true;
-          break; // Sort de la boucle de retry si c'est un succès
+          break;
         } else if (response.status === 403 && tentative < maxTentatives) {
           console.log(`[403 Bloqué] ${site.nom} - Tentative ${tentative}/${maxTentatives}, nouvelle tentative avec une autre IP...`);
-          await sleep(4000); // Pause de 4 secondes avant de retenter
+          await sleep(4000);
         } else {
-          break; // Autre erreur HTTP ou dernière tentative échouée
+          break;
         }
       } catch (e) {
         if (tentative === maxTentatives) {
