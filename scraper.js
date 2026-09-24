@@ -27,7 +27,7 @@ const SITES = [
       // 2. Mots-clés cibles à détecter dans la page de catégorie
       const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
       
-      // Doit contenir au moins un mot-clé ET ne pas présenter de message d'erreur d'absence
+      // Doit contenir au moins un mot-clé
       const contientMotCleCible = keywords.some(kw => content.includes(kw));
 
       return contientMotCleCible;
@@ -177,7 +177,14 @@ async function verifierTousLesStocks() {
         let targetUrl = site.url;
 
         if (site.useProxy && SCRAPER_API_KEY) {
-          targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}&render=true&country_code=fr&_t=${Date.now()}`;
+          let extraParams = "&render=true&country_code=fr";
+          
+          // Activation du proxy résidentiel premium pour King Jouet
+          if (site.nom === "KING JOUET") {
+            extraParams += "&premium=true";
+          }
+
+          targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}${extraParams}&_t=${Date.now()}`;
         }
 
         response = await fetch(targetUrl, {
@@ -192,8 +199,8 @@ async function verifierTousLesStocks() {
         if (response.ok) {
           succesRequete = true;
           break;
-        } else if (response.status === 403 && tentative < maxTentatives) {
-          console.log(`[403 Bloqué] ${site.nom} - Tentative ${tentative}/${maxTentatives}, nouvelle tentative avec une autre IP...`);
+        } else if ((response.status === 403 || response.status === 500) && tentative < maxTentatives) {
+          console.log(`[HTTP ${response.status}] ${site.nom} - Tentative ${tentative}/${maxTentatives}, nouvelle tentative...`);
           await sleep(4000);
         } else {
           break;
@@ -209,10 +216,17 @@ async function verifierTousLesStocks() {
 
     try {
       if (!succesRequete || !response.ok) {
-        erreursRunCount++;
-        const statusErr = response ? `Erreur HTTP ${response.status}` : 'Erreur réseau';
-        console.log(`[${statusErr}] ${site.nom}`);
-        await envoyerAlerteErreur(site.nom, statusErr);
+        const statusCode = response ? response.status : 0;
+        const statusErr = response ? `Erreur HTTP ${statusCode}` : 'Erreur réseau';
+
+        // Filtrage des erreurs 500/503 : on logue mais ON N'ENVOIE PAS d'alerte ntfy
+        if (statusCode === 500 || statusCode === 503) {
+          console.log(`[${statusErr}] ${site.nom} (Ignorée, alerte ntfy masquée)`);
+        } else {
+          erreursRunCount++;
+          console.log(`[${statusErr}] ${site.nom}`);
+          await envoyerAlerteErreur(site.nom, statusErr);
+        }
         continue;
       }
 
