@@ -179,9 +179,15 @@ async function verifierTousLesStocks() {
 
         if (site.useProxy && SCRAPER_API_KEY) {
           let extraParams = "&country_code=fr&keep_headers=true";
-          if (site.nom === "KING JOUET" || site.nom === "E.LECLERC") {
+          
+          if (site.nom === "KING JOUET") {
+            // Rendu JS activé spécifiquement pour King Jouet
+            extraParams += "&premium=true&render=true";
+          } else if (site.nom === "E.LECLERC") {
+            // Leclerc fonctionne parfaitement en HTTP rapide sans render=true
             extraParams += "&premium=true";
           }
+          
           targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}${extraParams}&_t=${Date.now()}`;
         }
 
