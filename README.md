@@ -16,10 +16,10 @@ Un système de monitoring automatique et résilient développé en **Node.js**, 
 
 ## 🏪 Sites surveillés
 
-* **Smyths Toys**
-* **King Jouet**
-* **JouéClub**
-* **Leclerc**
+* **Smyths Toys** (Fiche produit)
+* **King Jouet** (Catégorie « Coffrets dresseur » avec filtrage par mots-clés)
+* **JouéClub** (Fiche produit)
+* **E.Leclerc** (Fiche produit & validation vendeur officiel)
 
 ---
 
