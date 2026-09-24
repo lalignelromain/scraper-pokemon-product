@@ -104,9 +104,8 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     if (!conteneurHtml) conteneurHtml = $('main').html();
     if (!conteneurHtml) conteneurHtml = html;
   } else {
-    conteneurHtml = $('.product-detail').html();
-    if (!conteneurHtml) conteneurHtml = $('main').html();
-    if (!conteneurHtml) conteneurHtml = html;
+    // Ciblage précis pour Smyths Toys pour éviter les faux positifs liés aux scripts/compteurs dynamiques
+    conteneurHtml = $('button#add-to-cart').html() \vert{}\vert{} $('.product-title').html() || html;
   }
 
   const currentHash = getHash(conteneurHtml);
