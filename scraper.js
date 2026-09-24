@@ -178,8 +178,11 @@ async function verifierTousLesStocks() {
         let targetUrl = site.url;
 
         if (site.useProxy && SCRAPER_API_KEY) {
-          let extraParams = "&render=true&country_code=fr";
-          if (site.nom === "KING JOUET") extraParams += "&premium=true";
+          // Utilisation de ScraperAPI en HTML brut (sans render=true)
+          let extraParams = "&country_code=fr";
+          if (site.nom === "KING JOUET" || site.nom === "E.LECLERC") {
+            extraParams += "&premium=true";
+          }
           targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}${extraParams}&_t=${Date.now()}`;
         }
 
