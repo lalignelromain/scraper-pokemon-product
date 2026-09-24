@@ -91,7 +91,7 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
   const $ = cheerio.load(html);
   
   let conteneurHtml = "";
-  if (site.nom === "KING JOUET") conteneurHtml = $('.product-list').html() \vert{}\vert{}$('main').html() || html;
+  if (site.nom === "KING JOUET") conteneurHtml = $('.product-list').html() || $('main').html() || html;
   else if (site.nom === "E.LECLERC") conteneurHtml = $('script[type="application/ld+json"]').html() \vert{}\vert{} $('main').html() || html;
   else if (site.nom === "JOUECLUB") conteneurHtml = $('.c-product-detail').html() \vert{}\vert{}$('main').html() || html;
   else conteneurHtml = $('.product-detail').html() \vert{}\vert{}$('main').html() || html;
