@@ -6,10 +6,10 @@ Un système de monitoring automatique et résilient développé en **Node.js**, 
 
 ## 🎯 Fonctionnalités clés
 
-* **Surveillance multi-sites** : Inspection simultanée de plusieurs marchands avec des règles d'analyse HTML sur-mesure.
+* **Surveillance multi-sites** : Inspection simultanée de plusieurs marchands avec des règles d'analyse HTML et JSON sur-mesure.
 * **Notifications Push Direct-Click** : Réception d'alertes instantanées sur smartphone via **ntfy.sh** avec ouverture directe de la fiche produit au clic.
 * **Distinction visuelle des alertes** : Séparation claire entre les alertes de stock (priorité haute) et les notifications de maintenance/panne technique (priorité basse).
-* **Robustesse & Anti-Bot** : Rotation dynamique des signatures *User-Agent*, en-têtes HTTP de navigation complets et pauses aléatoires entre les requêtes pour limiter les risques de blocage d'IP.
+* **Robustesse & Anti-Bot** : Rotation dynamique des signatures *User-Agent*, utilisation d'un proxy (**ScraperAPI**) avec gestion de *retry* automatique en cas de blocage, en-têtes HTTP de navigation complets et pauses aléatoires entre les requêtes.
 * **Exécution 100 % Cloud** : Aucune infrastructure physique à maintenir (utilisation combinée des quotas gratuits de GitHub Actions, cron-job.org et ntfy).
 
 ---
@@ -19,13 +19,15 @@ Un système de monitoring automatique et résilient développé en **Node.js**, 
 * **Smyths Toys**
 * **King Jouet**
 * **JouéClub**
+* **Leclerc**
 
 ---
 
 ## 🏗️ Architecture & Stack Technique
 
+
 ┌─────────────────┐        ┌──────────────────────┐        ┌────────────────┐        ┌─────────────────┐
-│   cron-job.org  │ ────> │  GitHub Actions API  │ ────> │   scraper.js   │ ────> │    ntfy.sh API  │
+│   cron-job.org  │ ────>  │  GitHub Actions API  │ ────>  │   scraper.js   │ ────>  │   ntfy.sh API   │
 │ (Trigger / 5m)  │        │ (Runner Linux Cloud) │        │ (Node.js Fetch)│        │  (Push Mobile)  │
 └─────────────────┘        └──────────────────────┘        └────────────────┘        └─────────────────┘
 
@@ -56,10 +58,11 @@ Les alertes sont envoyées via l'API REST de `ntfy.sh` au format JSON structuré
 
 Pour garantir la pérennité du service sans subir de ban d'IP :
 
-1. **User-Agent Rotation** : Injection aléatoire d'en-têtes HTTP simulant des navigateurs récents (Chrome, Safari, Firefox, Edge sous Windows et macOS).
-2. **Browser Headers Full-Set** : Emulation complète d'empreinte client via les en-têtes `Sec-CH-UA`, `Sec-Fetch-*` (`mode`, `site`, `dest`) et `Referer` pour contourner les filtrages type Cloudflare/Datadome (résolution des erreurs HTTP 403).
-3. **Human-like Delays** : Ingestion d'une temporisation aléatoire variant entre 2 000 ms et 5 000 ms (`Math.random()`) entre chaque requête marchand.
-4. **Encoding Standardization** : Normalisation UTF-8 et assainissement des identifiants marchands (ex. `JOUECLUB`) pour éliminer la corruption de caractères dans les flux de notification push.
+1. **Proxy & Retry Automatique** : Routage via ScraperAPI avec un système de relance intelligent (2 tentatives maximum avec pause de 4 secondes et nouvelle IP en cas de code HTTP 403).
+2. **User-Agent Rotation** : Injection aléatoire d'en-têtes HTTP simulant des navigateurs récents (Chrome, Safari, Firefox, Edge sous Windows et macOS).
+3. **Browser Headers Full-Set** : Emulation complète d'empreinte client via les en-têtes `Sec-CH-UA`, `Sec-Fetch-*` (`mode`, `site`, `dest`) et `Referer` pour contourner les filtrages type Cloudflare/Datadome (résolution des erreurs HTTP 403).
+4. **Human-like Delays** : Ingestion d'une temporisation aléatoire variant entre 2 000 ms et 5 000 ms (`Math.random()`) entre chaque requête marchand.
+5. **Encoding Standardization** : Normalisation UTF-8 et assainissement des identifiants marchands (ex. `JOUECLUB`) pour éliminer la corruption de caractères dans les flux de notification push.
 
 ---
 
