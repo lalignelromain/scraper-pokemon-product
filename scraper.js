@@ -50,7 +50,7 @@ const SITES = [
   {
     nom: "KING JOUET",
     url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
-    useProxy: true,
+    useProxy: false,
     verifier: (html) => {
       const content = html.toLowerCase();
       if (content.includes("aucun résultat n'a été trouvé")) return false;
