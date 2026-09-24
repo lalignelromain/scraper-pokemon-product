@@ -1,16 +1,14 @@
+const fs = require('fs');
 const CANAL_NTFY = "stock-jouets-romain"; // Ton canal ntfy
-
-// Clé ScraperAPI récupérée depuis les secrets GitHub Actions
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY || ""; 
+const LOG_FILE = 'logs_erreurs.json';
 
 const SITES = [
   {
     nom: "SMYTHS TOYS",
     url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821",
     useProxy: false,
-    verifier: (html) => {
-      return html.includes('add-to-cart') && !html.includes('cursor-not-allowed');
-    }
+    verifier: (html) => html.includes('add-to-cart') && !html.includes('cursor-not-allowed')
   },
   {
     nom: "KING JOUET",
@@ -18,19 +16,9 @@ const SITES = [
     useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
-      
-      // 1. Si la catégorie est totalement vide de produits
-      if (content.includes("aucun résultat n'a été trouvé")) {
-        return false;
-      }
-
-      // 2. Mots-clés cibles à détecter dans la page de catégorie
+      if (content.includes("aucun résultat n'a été trouvé")) return false;
       const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-      
-      // Doit contenir au moins un mot-clé
-      const contientMotCleCible = keywords.some(kw => content.includes(kw));
-
-      return contientMotCleCible;
+      return keywords.some(kw => content.includes(kw));
     }
   },
   {
@@ -49,12 +37,7 @@ const SITES = [
     useProxy: true,
     verifier: (html) => {
       const content = html.toLowerCase();
-
-      // Filtre anti-marketplace (exclure vendeurs tiers)
-      if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) {
-        return false;
-      }
-
+      if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
       try {
         const data = JSON.parse(html);
         const offers = data.offers || (data.mainEntity && data.mainEntity.offers) || [];
@@ -67,12 +50,10 @@ const SITES = [
       } catch (e) {
         const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
         if (!contientTermeCoffret) return false;
-
         const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
         const aBoutonAchatOfficiel = 
           (content.includes('ajouter au panier') || content.includes('schema.org/instock')) &&
           (content.includes('retrait en magasin') || content.includes('vendu par e.leclerc'));
-
         return !estIndisponible && aBoutonAchatOfficiel;
       }
     }
@@ -92,14 +73,37 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function enregistrerErreur(site, statusHTTP, typeErreur, tentative) {
+  let logs = [];
+  if (fs.existsSync(LOG_FILE)) {
+    try {
+      logs = JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'));
+    } catch (e) {
+      logs = [];
+    }
+  }
+  const ilYADeuxDixQuatreHeures = Date.now() - (24 * 60 * 60 * 1000);
+  logs = logs.filter(log => new Date(log.timestamp).getTime() > ilYADeuxDixQuatreHeures);
+
+  logs.push({
+    timestamp: new Date().toISOString(),
+    site: site.nom,
+    url: site.url,
+    statusHTTP: statusHTTP || null,
+    typeErreur: typeErreur,
+    proxyUtilise: site.useProxy,
+    tentative: tentative
+  });
+
+  fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2));
+}
+
 async function envoyerHeartbeat(nbSites, nbErreurs) {
   const maintenant = new Date();
   const heureParis = parseInt(maintenant.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', hour12: false }), 10);
   const minutesParis = parseInt(maintenant.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', minute: '2-digit' }), 10);
 
-  const estCrenauCible = (heureParis === 9 || heureParis === 18) && minutesParis < 5;
-
-  if (estCrenauCible) {
+  if ((heureParis === 9 || heureParis === 18) && minutesParis < 5) {
     try {
       await fetch("https://ntfy.sh/", {
         method: "POST",
@@ -163,10 +167,7 @@ async function verifierTousLesStocks() {
 
   for (let i = 0; i < SITES.length; i++) {
     const site = SITES[i];
-
-    if (i > 0) {
-      await sleep(Math.floor(Math.random() * 3000) + 2000);
-    }
+    if (i > 0) await sleep(Math.floor(Math.random() * 3000) + 2000);
 
     let response = null;
     let succesRequete = false;
@@ -178,12 +179,7 @@ async function verifierTousLesStocks() {
 
         if (site.useProxy && SCRAPER_API_KEY) {
           let extraParams = "&render=true&country_code=fr";
-          
-          // Activation du proxy résidentiel premium pour King Jouet
-          if (site.nom === "KING JOUET") {
-            extraParams += "&premium=true";
-          }
-
+          if (site.nom === "KING JOUET") extraParams += "&premium=true";
           targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}${extraParams}&_t=${Date.now()}`;
         }
 
@@ -199,16 +195,18 @@ async function verifierTousLesStocks() {
         if (response.ok) {
           succesRequete = true;
           break;
-        } else if ((response.status === 403 || response.status === 500) && tentative < maxTentatives) {
-          console.log(`[HTTP ${response.status}] ${site.nom} - Tentative ${tentative}/${maxTentatives}, nouvelle tentative...`);
-          await sleep(4000);
         } else {
-          break;
+          enregistrerErreur(site, response.status, 'HTTP_ERROR', tentative);
+          if ((response.status === 403 || response.status === 500) && tentative < maxTentatives) {
+            console.log(`[HTTP ${response.status}] ${site.nom} - Tentative ${tentative}/${maxTentatives}, nouvelle tentative...`);
+            await sleep(4000);
+          } else {
+            break;
+          }
         }
       } catch (e) {
-        if (tentative === maxTentatives) {
-          throw e;
-        }
+        enregistrerErreur(site, null, e.message, tentative);
+        if (tentative === maxTentatives) throw e;
         console.log(`[Erreur Réseau] ${site.nom} - Tentative ${tentative}/${maxTentatives} : ${e.message}, nouveau test...`);
         await sleep(3000);
       }
@@ -219,7 +217,6 @@ async function verifierTousLesStocks() {
         const statusCode = response ? response.status : 0;
         const statusErr = response ? `Erreur HTTP ${statusCode}` : 'Erreur réseau';
 
-        // Filtrage des erreurs 500/503 : on logue mais ON N'ENVOIE PAS d'alerte ntfy
         if (statusCode === 500 || statusCode === 503) {
           console.log(`[${statusErr}] ${site.nom} (Ignorée, alerte ntfy masquée)`);
         } else {
