@@ -4,7 +4,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // Configuration
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
 const TIMING_FILE = 'timing_stats.json';
 const ETAT_STOCK_FILE = 'etat_stocks.json';
@@ -23,21 +22,6 @@ function getRandomUserAgent() {
     return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
-async function envoyerNotificationDiscord(nomSite, url) {
-    if (!WEBHOOK_URL) {
-        console.log(`[!] Notification ignorée : WEBHOOK_URL non défini.`);
-        return;
-    }
-    try {
-        await axios.post(WEBHOOK_URL, {
-            content: `🚨 **ALERTE STOCK** 🚨\nLe Coffret Dresseur d'Élite 30ème Anniversaire est peut-être EN STOCK sur **${nomSite}** !\nLien : ${url}`
-        });
-        console.log(`[+] Notification Discord envoyée pour ${nomSite}`);
-    } catch (error) {
-        console.error(`[-] Erreur lors de l'envoi Discord pour ${nomSite}:`, error.message);
-    }
-}
-
 // Enregistrement des changements DOM et Timings
 function enregistrerTimingEtDom(site, responseHeaders, html) {
     let stats = {};
@@ -49,7 +33,6 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     const $ = cheerio.load(html);
     let conteneurHtml = "";
 
-    // Ciblage spécifique pour éviter les faux positifs liés aux tokens dynamiques
     if (site.nom === "KING JOUET") {
         conteneurHtml = $('.product-list').html() \vert{}\vert{}$('main').html() || html;
     } else if (site.nom === "E.LECLERC") {
@@ -84,7 +67,6 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
         stats[site.nom].derniereVerif = maintenant;
     }
 
-    // Limiter l'historique pour ne pas saturer le fichier JSON
     if (stats[site.nom].historiqueMisesAJour.length > 50) {
         stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
     }
@@ -124,7 +106,6 @@ const SITES = [
             if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
 
             const $ = cheerio.load(html);
-            // Extraction propre du contenu textuel du script JSON-LD
             const jsonLdContent = $('script[type="application/ld+json"]').html();
 
             if (jsonLdContent) {
@@ -137,9 +118,7 @@ const SITES = [
                         const enStock = o.availability === 'https://schema.org/InStock' || o.availability === 'InStock';
                         return estVendeurOfficiel && enStock;
                     });
-                } catch (e) {
-                    // Fallback passif si le parsing échoue
-                }
+                } catch (e) {}
             }
 
             const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
@@ -181,27 +160,21 @@ async function verifierTousLesStocks() {
             try {
                 let targetUrl = `${site.url}${site.url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
                 
-                // Définition par défaut des entêtes
                 let headers = {
                     'User-Agent': getRandomUserAgent(),
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                     'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
                 };
 
-                let requestOptions = { 
-                    method: 'GET', 
-                    timeout: 30000 
-                };
+                let requestOptions = { method: 'GET', timeout: 30000 };
 
                 if (site.useProxy && SCRAPER_API_KEY) {
                     let extraParams = "&country_code=fr";
                     
                     if (site.nom === "KING JOUET") {
                         if (tentative === 1) {
-                            // Rendu JS : On délègue totalement l'empreinte TLS/Headers à ScraperAPI
                             extraParams += "&premium=true&render=true&wait_for_selector=.product-list";
                         } else {
-                            // Fallback statique avec nos entêtes
                             extraParams += "&premium=true&keep_headers=true";
                             requestOptions.headers = headers;
                         }
@@ -212,7 +185,6 @@ async function verifierTousLesStocks() {
                     
                     targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}${extraParams}&_t=${Date.now()}`;
                 } else {
-                    // Connexion directe
                     requestOptions.headers = headers;
                 }
 
@@ -226,19 +198,11 @@ async function verifierTousLesStocks() {
                 const estEnStock = site.verifier(html);
                 console.log(`[${site.nom}] Résultat : ${estEnStock ? '🟢 EN STOCK' : '🔴 RUPTURE'}`);
 
-                const etaitEnStock = etatStocks[site.nom] === true;
-                if (estEnStock && !etaitEnStock) {
-                    await envoyerNotificationDiscord(site.nom, site.url);
-                }
-
                 etatStocks[site.nom] = estEnStock;
                 success = true;
 
             } catch (error) {
                 console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${error.message}`);
-                if (tentative === 2) {
-                    console.error(`[!] Impossible de vérifier ${site.nom} après 2 tentatives.`);
-                }
             }
         }
     }
@@ -247,5 +211,4 @@ async function verifierTousLesStocks() {
     console.log("\n✅ Vérification terminée.");
 }
 
-// Lancement
 verifierTousLesStocks();
