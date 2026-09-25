@@ -1,13 +1,8 @@
 {
   "SMYTHS TOYS": {
-    "dernierHash": "0eaea0b45943734c951a04c2d017d85b",
-    "derniereVerif": "2026-09-25T15:15:44.310Z",
+    "dernierHash": "4418f28bc8b9ffaeb0d3960e98e3f716",
+    "derniereVerif": "2026-09-25T15:20:32.386Z",
     "historiqueMisesAJour": [
-      {
-        "timestampLocal": "2026-09-25T11:10:36.350Z",
-        "timestampServeur": null,
-        "type": "CHANGEMENT_DOM"
-      },
       {
         "timestampLocal": "2026-09-25T11:15:34.951Z",
         "timestampServeur": null,
@@ -252,12 +247,17 @@
         "timestampLocal": "2026-09-25T15:15:44.310Z",
         "timestampServeur": null,
         "type": "CHANGEMENT_DOM"
+      },
+      {
+        "timestampLocal": "2026-09-25T15:20:32.386Z",
+        "timestampServeur": null,
+        "type": "CHANGEMENT_DOM"
       }
     ]
   },
   "JOUECLUB": {
-    "dernierHash": "2b9b89e82c9c7096877ea9282ae7f282",
-    "derniereVerif": "2026-09-25T15:15:44.982Z",
+    "dernierHash": "590b69ef5c86ef4fefaefcf51f0c4d50",
+    "derniereVerif": "2026-09-25T15:20:33.076Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-25T13:40:31.537Z",
@@ -267,6 +267,11 @@
       {
         "timestampLocal": "2026-09-25T15:10:32.985Z",
         "timestampServeur": "Fri, 25 Sep 2026 15:10:32 GMT",
+        "type": "CHANGEMENT_DOM"
+      },
+      {
+        "timestampLocal": "2026-09-25T15:20:33.076Z",
+        "timestampServeur": "Fri, 25 Sep 2026 15:20:32 GMT",
         "type": "CHANGEMENT_DOM"
       }
     ]
