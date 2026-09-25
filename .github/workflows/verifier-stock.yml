@@ -28,9 +28,9 @@ jobs:
 
       - name: Installer les dépendances et initialiser les fichiers JSON
         run: |
-          # Initialisation des fichiers pour éviter les erreurs d'écriture
-          [ -f timing_stats.json ] || echo "{}" > timing_stats.json
-          [ -f etat_stocks.json ] || echo "{}" > etat_stocks.json
+          # Initialisation des fichiers sans utiliser les doubles pipes
+          if [ ! -f timing_stats.json ]; then echo "{}" > timing_stats.json; fi
+          if [ ! -f etat_stocks.json ]; then echo "{}" > etat_stocks.json; fi
           
           # Installation des modules nécessaires
           npm install axios cheerio
