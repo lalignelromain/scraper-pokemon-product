@@ -50,27 +50,50 @@ async function envoyerNotificationNtfy(nomSite, url) {
 function enregistrerTimingEtDom(site, responseHeaders, html) {
     let stats = {};
     if (fs.existsSync(TIMING_FILE)) {
-        try { stats = JSON.parse(fs.readFileSync(TIMING_FILE, 'utf8')); } catch (e) { stats = {}; }
+        try { 
+            stats = JSON.parse(fs.readFileSync(TIMING_FILE, 'utf8')); 
+        } catch (e) { 
+            stats = {}; 
+        }
     }
 
     const maintenant = new Date().toISOString();
     const $ = cheerio.load(html);
     let conteneurHtml = "";
 
+    // Remplacement des || par des if/else successifs
     if (site.nom === "KING JOUET") {
-        conteneurHtml = $('.product-list').html() \vert{}\vert{}$('main').html() || html;
+        conteneurHtml = $('.product-list').html();
+        if (!conteneurHtml) conteneurHtml = $('main').html();
+        if (!conteneurHtml) conteneurHtml = html;
     } else if (site.nom === "E.LECLERC") {
-        conteneurHtml = $('script[type="application/ld+json"]').html() \vert{}\vert{} $('main').html() || html;
+        conteneurHtml = $('script[type="application/ld+json"]').html();
+        if (!conteneurHtml) conteneurHtml = $('main').html();
+        if (!conteneurHtml) conteneurHtml = html;
     } else if (site.nom === "JOUECLUB") {
-        conteneurHtml = $('.c-product-detail').html() \vert{}\vert{}$('main').html() || html;
+        conteneurHtml = $('.c-product-detail').html();
+        if (!conteneurHtml) conteneurHtml = $('main').html();
+        if (!conteneurHtml) conteneurHtml = html;
     } else if (site.nom === "SMYTHS TOYS") {
-        conteneurHtml = $('#addToCartForm').html() || $('.product-add-to-cart').html() \vert{}\vert{}$('#product-details').html() || html;
+        conteneurHtml = $('#addToCartForm').html();
+        if (!conteneurHtml) conteneurHtml = $('.product-add-to-cart').html();
+        if (!conteneurHtml) conteneurHtml = $('#product-details').html();
+        if (!conteneurHtml) conteneurHtml = html;
     } else {
-        conteneurHtml = $('main').html() || html;
+        conteneurHtml = $('main').html();
+        if (!conteneurHtml) conteneurHtml = html;
     }
 
     const currentHash = getHash(conteneurHtml);
-    const serverDate = (responseHeaders && (responseHeaders['date'] || responseHeaders['last-modified'])) || null;
+    
+    let serverDate = null;
+    if (responseHeaders) {
+        if (responseHeaders['date']) {
+            serverDate = responseHeaders['date'];
+        } else if (responseHeaders['last-modified']) {
+            serverDate = responseHeaders['last-modified'];
+        }
+    }
 
     if (!stats[site.nom]) {
         stats[site.nom] = {
@@ -79,14 +102,16 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
             historiqueMisesAJour: []
         };
     } else {
-        if (stats[site.nom].dernierHash && stats[site.nom].dernierHash !== currentHash) {
-            console.log(`📌 [MAJ DOM DÉTECTÉE] ${site.nom} à ${maintenant}`);
-            stats[site.nom].historiqueMisesAJour.push({
-                timestampLocal: maintenant,
-                timestampServeur: serverDate,
-                type: "CHANGEMENT_DOM"
-            });
-            stats[site.nom].dernierHash = currentHash;
+        if (stats[site.nom].dernierHash) {
+            if (stats[site.nom].dernierHash !== currentHash) {
+                console.log(`📌 [MAJ DOM DÉTECTÉE] ${site.nom} à ${maintenant}`);
+                stats[site.nom].historiqueMisesAJour.push({
+                    timestampLocal: maintenant,
+                    timestampServeur: serverDate,
+                    type: "CHANGEMENT_DOM"
+                });
+                stats[site.nom].dernierHash = currentHash;
+            }
         }
         stats[site.nom].derniereVerif = maintenant;
     }
@@ -108,7 +133,13 @@ const SITES = [
             const $ = cheerio.load(html);
             const btn = $('#addToCartForm button[type="submit"], .js-add-to-cart-button');
             if (!btn.length) return false;
-            return !btn.prop('disabled') && !btn.hasClass('cursor-not-allowed');
+            
+            let isDisabled = btn.prop('disabled');
+            let hasClass = btn.hasClass('cursor-not-allowed');
+            
+            if (isDisabled) return false;
+            if (hasClass) return false;
+            return true;
         }
     },
     {
@@ -117,8 +148,17 @@ const SITES = [
         useProxy: false,
         verifier: (html) => {
             const enStockSchema = html.includes('schema.org/InStock');
-            const boutonActif = html.includes('c-product-add-to-cart') && !html.includes('Indisponible');
-            return enStockSchema || boutonActif;
+            
+            let boutonActif = false;
+            if (html.includes('c-product-add-to-cart')) {
+                if (!html.includes('Indisponible')) {
+                    boutonActif = true;
+                }
+            }
+            
+            if (enStockSchema) return true;
+            if (boutonActif) return true;
+            return false;
         }
     },
     {
@@ -127,7 +167,11 @@ const SITES = [
         useProxy: true,
         verifier: (html) => {
             const content = html.toLowerCase();
-            if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
+            if (content.includes('vendu et expédié par')) {
+                if (!content.includes('e.leclerc')) {
+                    return false;
+                }
+            }
 
             const $ = cheerio.load(html);
             const jsonLdContent = $('script[type="application/ld+json"]').html();
@@ -135,23 +179,74 @@ const SITES = [
             if (jsonLdContent) {
                 try {
                     const data = JSON.parse(jsonLdContent);
-                    const offers = data.offers || (data.mainEntity && data.mainEntity.offers) || [];
-                    const offersList = Array.isArray(offers) ? offers : [offers];
+                    let offers = data.offers;
+                    
+                    if (!offers) {
+                        if (data.mainEntity) {
+                            if (data.mainEntity.offers) {
+                                offers = data.mainEntity.offers;
+                            }
+                        }
+                    }
+                    if (!offers) offers = [];
+                    
+                    let offersList = [];
+                    if (Array.isArray(offers)) {
+                        offersList = offers;
+                    } else {
+                        offersList = [offers];
+                    }
+                    
                     return offersList.some(o => {
-                        const estVendeurOfficiel = !o.seller || o.seller.name?.toLowerCase().includes('leclerc');
-                        const enStock = o.availability === 'https://schema.org/InStock' || o.availability === 'InStock';
-                        return estVendeurOfficiel && enStock;
+                        let estVendeurOfficiel = false;
+                        if (!o.seller) {
+                            estVendeurOfficiel = true;
+                        } else if (o.seller.name) {
+                            if (o.seller.name.toLowerCase().includes('leclerc')) {
+                                estVendeurOfficiel = true;
+                            }
+                        }
+                        
+                        let enStock = false;
+                        if (o.availability === 'https://schema.org/InStock') {
+                            enStock = true;
+                        } else if (o.availability === 'InStock') {
+                            enStock = true;
+                        }
+                        
+                        if (estVendeurOfficiel) {
+                            if (enStock) {
+                                return true;
+                            }
+                        }
+                        return false;
                     });
                 } catch (e) {}
             }
 
-            const contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
+            let contientTermeCoffret = content.includes('dresseur');
+            if (!contientTermeCoffret) contientTermeCoffret = content.includes('etb');
             if (!contientTermeCoffret) return false;
-            const estIndisponible = content.includes('indisponible') || content.includes('épuisé');
-            const aBoutonAchatOfficiel = 
-                (content.includes('ajouter au panier') || content.includes('schema.org/instock')) &&
-                (content.includes('retrait en magasin') || content.includes('vendu par e.leclerc'));
-            return !estIndisponible && aBoutonAchatOfficiel;
+            
+            let estIndisponible = content.includes('indisponible');
+            if (!estIndisponible) estIndisponible = content.includes('épuisé');
+            
+            let contientAjout = content.includes('ajouter au panier');
+            if (!contientAjout) contientAjout = content.includes('schema.org/instock');
+            
+            let contientRetrait = content.includes('retrait en magasin');
+            if (!contientRetrait) contientRetrait = content.includes('vendu par e.leclerc');
+            
+            let aBoutonAchatOfficiel = false;
+            if (contientAjout) {
+                if (contientRetrait) {
+                    aBoutonAchatOfficiel = true;
+                }
+            }
+            
+            if (estIndisponible) return false;
+            if (aBoutonAchatOfficiel) return true;
+            return false;
         }
     },
     {
@@ -171,7 +266,11 @@ const SITES = [
 async function verifierTousLesStocks() {
     let etatStocks = {};
     if (fs.existsSync(ETAT_STOCK_FILE)) {
-        try { etatStocks = JSON.parse(fs.readFileSync(ETAT_STOCK_FILE, 'utf8')); } catch (e) { etatStocks = {}; }
+        try { 
+            etatStocks = JSON.parse(fs.readFileSync(ETAT_STOCK_FILE, 'utf8')); 
+        } catch (e) { 
+            etatStocks = {}; 
+        }
     }
 
     for (const site of SITES) {
@@ -182,7 +281,14 @@ async function verifierTousLesStocks() {
             if (success) break;
 
             try {
-                let targetUrl = `${site.url}${site.url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+                let baseParams = "";
+                if (site.url.includes('?')) {
+                    baseParams = "&_t=" + Date.now();
+                } else {
+                    baseParams = "?_t=" + Date.now();
+                }
+                
+                let targetUrl = site.url + baseParams;
                 
                 let headers = {
                     'User-Agent': getRandomUserAgent(),
@@ -192,22 +298,24 @@ async function verifierTousLesStocks() {
 
                 let requestOptions = { method: 'GET', timeout: 30000 };
 
-                if (site.useProxy && SCRAPER_API_KEY) {
-                    let extraParams = "&country_code=fr";
-                    
-                    if (site.nom === "KING JOUET") {
-                        if (tentative === 1) {
-                            extraParams += "&premium=true&render=true&wait_for_selector=.product-list";
-                        } else {
+                if (site.useProxy) {
+                    if (SCRAPER_API_KEY) {
+                        let extraParams = "&country_code=fr";
+                        
+                        if (site.nom === "KING JOUET") {
+                            if (tentative === 1) {
+                                extraParams += "&premium=true&render=true&wait_for_selector=.product-list";
+                            } else {
+                                extraParams += "&premium=true&keep_headers=true";
+                                requestOptions.headers = headers;
+                            }
+                        } else if (site.nom === "E.LECLERC") {
                             extraParams += "&premium=true&keep_headers=true";
                             requestOptions.headers = headers;
                         }
-                    } else if (site.nom === "E.LECLERC") {
-                        extraParams += "&premium=true&keep_headers=true";
-                        requestOptions.headers = headers;
+                        
+                        targetUrl = "http://api.scraperapi.com?api_key=" + SCRAPER_API_KEY + "&url=" + encodeURIComponent(site.url) + extraParams + "&_t=" + Date.now();
                     }
-                    
-                    targetUrl = `http://api.scraperapi.com?api_key=${SCRAPER_API_KEY}&url=${encodeURIComponent(site.url)}${extraParams}&_t=${Date.now()}`;
                 } else {
                     requestOptions.headers = headers;
                 }
@@ -215,16 +323,33 @@ async function verifierTousLesStocks() {
                 requestOptions.url = targetUrl;
                 
                 const response = await axios(requestOptions);
-                const html = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+                
+                let html = "";
+                if (typeof response.data === 'string') {
+                    html = response.data;
+                } else {
+                    html = JSON.stringify(response.data);
+                }
                 
                 enregistrerTimingEtDom(site, response.headers, html);
 
                 const estEnStock = site.verifier(html);
-                console.log(`[${site.nom}] Résultat : ${estEnStock ? '🟢 EN STOCK' : '🔴 RUPTURE'}`);
+                
+                let resultatText = '🔴 RUPTURE';
+                if (estEnStock) {
+                    resultatText = '🟢 EN STOCK';
+                }
+                console.log(`[${site.nom}] Résultat : ${resultatText}`);
 
-                const etaitEnStock = etatStocks[site.nom] === true;
-                if (estEnStock && !etaitEnStock) {
-                    await envoyerNotificationNtfy(site.nom, site.url);
+                let etaitEnStock = false;
+                if (etatStocks[site.nom] === true) {
+                    etaitEnStock = true;
+                }
+                
+                if (estEnStock) {
+                    if (!etaitEnStock) {
+                        await envoyerNotificationNtfy(site.nom, site.url);
+                    }
                 }
 
                 etatStocks[site.nom] = estEnStock;
