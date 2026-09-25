@@ -1,7 +1,7 @@
 {
   "SMYTHS TOYS": {
-    "dernierHash": "438dde4ac79f921361850b6012bcf189",
-    "derniereVerif": "2026-09-25T08:15:38.982Z",
+    "dernierHash": "482f8bc25e2cd5d93c30359179b9831c",
+    "derniereVerif": "2026-09-25T08:20:32.070Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-25T06:00:58.340Z",
@@ -132,17 +132,22 @@
         "timestampLocal": "2026-09-25T08:15:38.982Z",
         "timestampServeur": null,
         "type": "CHANGEMENT_DOM"
+      },
+      {
+        "timestampLocal": "2026-09-25T08:20:32.070Z",
+        "timestampServeur": null,
+        "type": "CHANGEMENT_DOM"
       }
     ]
   },
   "JOUECLUB": {
     "dernierHash": "2b9b89e82c9c7096877ea9282ae7f282",
-    "derniereVerif": "2026-09-25T08:15:40.098Z",
+    "derniereVerif": "2026-09-25T08:20:32.724Z",
     "historiqueMisesAJour": []
   },
   "E.LECLERC": {
     "dernierHash": "ff1671880cc0feee2276f3f02f35a494",
-    "derniereVerif": "2026-09-25T08:15:45.275Z",
+    "derniereVerif": "2026-09-25T08:20:34.240Z",
     "historiqueMisesAJour": []
   },
   "dernierHeartbeatSlot": "2026-09-25-8h",
