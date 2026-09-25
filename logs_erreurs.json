@@ -3166,5 +3166,23 @@
     "typeErreur": "HTTP_ERROR",
     "proxyUtilise": true,
     "tentative": 2
+  },
+  {
+    "timestamp": "2026-09-25T03:26:28.596Z",
+    "site": "KING JOUET",
+    "url": "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
+    "statusHTTP": 500,
+    "typeErreur": "HTTP_ERROR",
+    "proxyUtilise": true,
+    "tentative": 1
+  },
+  {
+    "timestamp": "2026-09-25T03:27:11.203Z",
+    "site": "KING JOUET",
+    "url": "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
+    "statusHTTP": 500,
+    "typeErreur": "HTTP_ERROR",
+    "proxyUtilise": true,
+    "tentative": 2
   }
 ]
