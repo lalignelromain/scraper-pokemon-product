@@ -2,13 +2,16 @@ name: Verification Stock Jouets
 
 on:
   schedule:
+    # S'exécute automatiquement toutes les 5 minutes
     - cron: '*/5 * * * *'
   repository_dispatch:
+    # Permet le déclenchement instantané via le Webhook cron-job.org
     types: [run-scraper]
   workflow_dispatch:
+    # Permet d'exécuter le script à la main pour tester
 
 permissions:
-  contents: write
+  contents: write # Donne accès au git push pour sauvegarder les logs et l'état des stocks
 
 jobs:
   check-stock:
@@ -21,17 +24,22 @@ jobs:
       - name: Configurer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
       - name: Installer les dépendances et initialiser les fichiers JSON
         run: |
+          # Initialisation des fichiers pour éviter les erreurs d'écriture
           [ -f timing_stats.json ] || echo "{}" > timing_stats.json
           [ -f etat_stocks.json ] || echo "{}" > etat_stocks.json
+          
+          # Installation des modules nécessaires
           npm install axios cheerio
 
       - name: Exécuter le script de vérification
         env:
+          # Les secrets définis dans les paramètres du dépôt GitHub
           SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: node scraper.js
 
       - name: Sauvegarder les logs et états
