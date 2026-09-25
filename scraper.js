@@ -302,11 +302,13 @@ async function verifierTousLesStocks() {
                         let extraParams = "&country_code=fr";
                         
                         if (site.nom === "KING JOUET") {
+                            // On retire complètement le render=true et les headers personnalisés
+                            // On laisse l'API de ScraperAPI gérer de manière furtive
                             if (tentative === 1) {
-                                extraParams += "&premium=true&render=true";
+                                extraParams += "&premium=true";
                             } else {
-                                extraParams += "&premium=true&keep_headers=true";
-                                requestOptions.headers = headers;
+                                // En plan B, on force ScraperAPI à simuler un ordinateur de bureau
+                                extraParams += "&premium=true&device_type=desktop";
                             }
                         } else if (site.nom === "E.LECLERC") {
                             extraParams += "&premium=true&keep_headers=true";
