@@ -23,6 +23,7 @@ function getRandomUserAgent() {
     return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
+// 🚨 Notification URGENTE pour un STOCK TROUVÉ
 async function envoyerNotificationNtfy(nomSite, url) {
     if (!NTFY_TOPIC) {
         console.log(`[!] Notification ignorée : NTFY_TOPIC non défini.`);
@@ -40,9 +41,67 @@ async function envoyerNotificationNtfy(nomSite, url) {
                 }
             }
         );
-        console.log(`[+] Notification Ntfy envoyée pour ${nomSite}`);
+        console.log(`[+] Notification Ntfy (Alerte Stock) envoyée pour ${nomSite}`);
     } catch (error) {
         console.error(`[-] Erreur lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
+    }
+}
+
+// 💓 Notification HEARTBEAT / RECAPITULATIF (UNIQUEMENT À 8H ET 18H)
+async function envoyerHeartbeatNtfy(etatStocks) {
+    if (!NTFY_TOPIC) return;
+
+    const now = new Date();
+    // Récupération de l'heure en France (Europe/Paris)
+    const heureFR = parseInt(new Intl.DateTimeFormat('fr-FR', {
+        timeZone: 'Europe/Paris',
+        hour: 'numeric',
+        hour12: false
+    }).format(now), 10);
+
+    // On ne déclenche qu'à 8h et 18h
+    if (heureFR !== 8 && heureFR !== 18) {
+        return;
+    }
+
+    // Clé unique de créneau (ex: "2026-09-25-8h") pour ne pas réémettre si le script tourne toutes les 10-15 min
+    const dateDuJour = now.toISOString().slice(0, 10);
+    const slotCle = `${dateDuJour}-${heureFR}h`;
+
+    let stats = {};
+    if (fs.existsSync(TIMING_FILE)) {
+        try { stats = JSON.parse(fs.readFileSync(TIMING_FILE, 'utf8')); } catch (e) {}
+    }
+
+    if (stats.dernierHeartbeatSlot === slotCle) {
+        console.log(`[i] Heartbeat pour le créneau ${slotCle} déjà envoyé. Ignoré.`);
+        return;
+    }
+
+    // Construction du message de synthèse
+    let message = "🤖 BILAN DES STOCKS (8h / 18h)\n\n";
+    for (const site of SITES) {
+        const enStock = etatStocks[site.nom];
+        const statusStr = enStock ? "🟢 EN STOCK" : "🔴 Rupture";
+        message += `${site.nom} : ${statusStr}\n`;
+    }
+    message += "\n✅ Scraper opérationnel.";
+
+    try {
+        await axios.post(`https://ntfy.sh/${NTFY_TOPIC}`, message, {
+            headers: {
+                'Title': `💓 Heartbeat (${heureFR}h00)`,
+                'Priority': 'low',
+                'Tags': 'robot,bar_chart'
+            }
+        });
+        console.log(`[+] Notification Ntfy (Heartbeat ${heureFR}h) envoyée.`);
+
+        // Sauvegarde du créneau pour éviter les doublons
+        stats.dernierHeartbeatSlot = slotCle;
+        fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
+    } catch (error) {
+        console.error(`[-] Erreur lors de l'envoi du Heartbeat Ntfy:`, error.message);
     }
 }
 
@@ -115,7 +174,7 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
         stats[site.nom].derniereVerif = maintenant;
     }
 
-    if (stats[site.nom].historiqueMisesAJour.length > 50) {
+    if (stats[site.nom].historiqueMisesAJour && stats[site.nom].historiqueMisesAJour.length > 50) {
         stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
     }
 
@@ -302,12 +361,9 @@ async function verifierTousLesStocks() {
                         let extraParams = "&country_code=fr";
                         
                         if (site.nom === "KING JOUET") {
-                            // On retire complètement le render=true et les headers personnalisés
-                            // On laisse l'API de ScraperAPI gérer de manière furtive
                             if (tentative === 1) {
                                 extraParams += "&premium=true";
                             } else {
-                                // En plan B, on force ScraperAPI à simuler un ordinateur de bureau
                                 extraParams += "&premium=true&device_type=desktop";
                             }
                         } else if (site.nom === "E.LECLERC") {
@@ -366,6 +422,10 @@ async function verifierTousLesStocks() {
     }
 
     fs.writeFileSync(ETAT_STOCK_FILE, JSON.stringify(etatStocks, null, 2));
+    
+    // Tentative d'envoi du rapport Heartbeat (filtré à 8h et 18h)
+    await envoyerHeartbeatNtfy(etatStocks);
+    
     console.log("\n✅ Vérification terminée.");
 }
 
