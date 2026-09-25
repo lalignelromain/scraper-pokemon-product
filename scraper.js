@@ -296,7 +296,7 @@ async function verifierTousLesStocks() {
                     'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
                 };
 
-                let requestOptions = { method: 'GET', timeout: 30000 };
+                let requestOptions = { method: 'GET', timeout: 60000 };
 
                 if (site.useProxy) {
                     if (SCRAPER_API_KEY) {
