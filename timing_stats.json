@@ -1,7 +1,7 @@
 {
   "SMYTHS TOYS": {
-    "dernierHash": "61ec87440282843baee7c50d8fc62f05",
-    "derniereVerif": "2026-09-25T06:50:35.047Z",
+    "dernierHash": "c60c82f3fdd73f2c8969a0820ee521bf",
+    "derniereVerif": "2026-09-25T06:55:22.550Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-25T06:00:58.340Z",
@@ -47,18 +47,28 @@
         "timestampLocal": "2026-09-25T06:50:35.047Z",
         "timestampServeur": null,
         "type": "CHANGEMENT_DOM"
+      },
+      {
+        "timestampLocal": "2026-09-25T06:55:22.550Z",
+        "timestampServeur": null,
+        "type": "CHANGEMENT_DOM"
       }
     ]
   },
   "JOUECLUB": {
     "dernierHash": "2b9b89e82c9c7096877ea9282ae7f282",
-    "derniereVerif": "2026-09-25T06:50:36.817Z",
+    "derniereVerif": "2026-09-25T06:55:24.160Z",
     "historiqueMisesAJour": []
   },
   "E.LECLERC": {
     "dernierHash": "ff1671880cc0feee2276f3f02f35a494",
-    "derniereVerif": "2026-09-25T06:50:41.616Z",
+    "derniereVerif": "2026-09-25T06:55:25.263Z",
     "historiqueMisesAJour": []
   },
-  "dernierHeartbeatSlot": "2026-09-25-8h"
+  "dernierHeartbeatSlot": "2026-09-25-8h",
+  "KING JOUET": {
+    "dernierHash": "c56df20f81dc709f90d73c02f00e7aef",
+    "derniereVerif": "2026-09-25T06:56:23.240Z",
+    "historiqueMisesAJour": []
+  }
 }
