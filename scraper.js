@@ -5,6 +5,7 @@ const crypto = require('crypto');
 
 // Configuration
 const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
+const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const TIMING_FILE = 'timing_stats.json';
 const ETAT_STOCK_FILE = 'etat_stocks.json';
 
@@ -20,6 +21,29 @@ function getRandomUserAgent() {
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
     ];
     return userAgents[Math.floor(Math.random() * userAgents.length)];
+}
+
+async function envoyerNotificationNtfy(nomSite, url) {
+    if (!NTFY_TOPIC) {
+        console.log(`[!] Notification ignorée : NTFY_TOPIC non défini.`);
+        return;
+    }
+
+    try {
+        await axios.post(`https://ntfy.sh/${NTFY_TOPIC}`, 
+            `🚨 ALERTE STOCK 🚨\nLe Coffret Dresseur d'Élite est EN STOCK sur ${nomSite} !\nLien : ${url}`,
+            {
+                headers: {
+                    'Title': 'Pokémon 30ème - En Stock !',
+                    'Priority': 'urgent',
+                    'Tags': 'rotating_light,pokemon'
+                }
+            }
+        );
+        console.log(`[+] Notification Ntfy envoyée pour ${nomSite}`);
+    } catch (error) {
+        console.error(`[-] Erreur lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
+    }
 }
 
 // Enregistrement des changements DOM et Timings
@@ -198,11 +222,19 @@ async function verifierTousLesStocks() {
                 const estEnStock = site.verifier(html);
                 console.log(`[${site.nom}] Résultat : ${estEnStock ? '🟢 EN STOCK' : '🔴 RUPTURE'}`);
 
+                const etaitEnStock = etatStocks[site.nom] === true;
+                if (estEnStock && !etaitEnStock) {
+                    await envoyerNotificationNtfy(site.nom, site.url);
+                }
+
                 etatStocks[site.nom] = estEnStock;
                 success = true;
 
             } catch (error) {
                 console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${error.message}`);
+                if (tentative === 2) {
+                    console.error(`[!] Impossible de vérifier ${site.nom} après 2 tentatives.`);
+                }
             }
         }
     }
@@ -211,4 +243,5 @@ async function verifierTousLesStocks() {
     console.log("\n✅ Vérification terminée.");
 }
 
+// Lancement
 verifierTousLesStocks();
