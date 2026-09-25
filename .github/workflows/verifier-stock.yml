@@ -25,20 +25,24 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Initialiser les fichiers JSON et installer cheerio
+      - name: Installer les dépendances et initialiser les fichiers JSON
         run: |
-          [ -f logs_erreurs.json ] || echo "[]" > logs_erreurs.json
-          [ -f stats_horaires.json ] || echo "{}" > stats_horaires.json
-          npm install cheerio
+          # Initialisation des bons fichiers utilisés par scraper.js
+          [ -f timing_stats.json ] || echo "{}" > timing_stats.json
+          [ -f etat_stocks.json ] || echo "{}" > etat_stocks.json
+          
+          # Installation des modules (axios pour les requêtes, cheerio pour le parsing HTML)
+          npm install axios cheerio
 
       - name: Exécuter le script de vérification
         env:
           SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: node scraper.js
 
-      - name: Sauvegarder les logs et statistiques
+      - name: Sauvegarder les logs et états
         if: always()
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(data): mise a jour des logs et stats horaires"
-          file_pattern: "logs_erreurs.json stats_horaires.json"
+          commit_message: "chore(data): mise à jour des états de stock et timings"
+          file_pattern: "timing_stats.json etat_stocks.json"
