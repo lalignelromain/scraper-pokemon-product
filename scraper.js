@@ -61,7 +61,6 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     const $ = cheerio.load(html);
     let conteneurHtml = "";
 
-    // Remplacement des || par des if/else successifs
     if (site.nom === "KING JOUET") {
         conteneurHtml = $('.product-list').html();
         if (!conteneurHtml) conteneurHtml = $('main').html();
@@ -304,7 +303,7 @@ async function verifierTousLesStocks() {
                         
                         if (site.nom === "KING JOUET") {
                             if (tentative === 1) {
-                                extraParams += "&premium=true&render=true&wait_for_selector=.product-list";
+                                extraParams += "&premium=true&render=true";
                             } else {
                                 extraParams += "&premium=true&keep_headers=true";
                                 requestOptions.headers = headers;
