@@ -323,83 +323,38 @@ const SITES = [
         nom: "KING JOUET",
         url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
         verifier: (html) => {
-            const content = html.toLowerCase();
-            if (content.includes("aucun résultat n'a été trouvé")) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
-        }
-    }
-];
-
-// Logique principale
-async function verifierTousLesStocks() {
-    let etatStocks = {};
-    if (fs.existsSync(ETAT_STOCK_FILE)) {
-        try { 
-            etatStocks = JSON.parse(fs.readFileSync(ETAT_STOCK_FILE, 'utf8')); 
-        } catch (e) { 
-            etatStocks = {}; 
-        }
-    }
-
-    console.log("🚀 Démarrage du navigateur Playwright...");
-    let browser = null;
-    try {
-        browser = await chromium.launch({ headless: true });
-    } catch (e) {
-        console.error("[-] Impossible de lancer Playwright :", e.message);
-        return;
-    }
-
-    for (const site of SITES) {
-        console.log(`\n⏳ Vérification en cours pour : ${site.nom}`);
-        let success = false;
-
-        for (let tentative = 1; tentative <= 2; tentative++) {
-            if (success) break;
-
-            try {
-                const context = await browser.newContext({
-                    userAgent: getRandomUserAgent(),
-                    locale: 'fr-FR',
-                    viewport: { width: 1280, height: 720 }
-                });
-
-                const page = await context.newPage();
-                
-                // Navigation avec un délai étendu pour laisser le JavaScript s'exécuter
-                await page.goto(site.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
-                
-                // Temporisation humaine aléatoire (entre 2s et 5s) pour rassurer les protections
-                const randomDelay = Math.floor(Math.random() * 3000) + 2000;
-                await page.waitForTimeout(randomDelay);
-
-                const html = await page.content();
-                await context.close();
-                
-                enregistrerTimingEtDom(site, html);
-
-                const estEnStock = site.verifier(html);
-                
-                let resultatText = '🔴 RUPTURE';
-                if (estEnStock) {
-                    resultatText = '🟢 EN STOCK';
-                }
-                console.log(`[${site.nom}] Résultat : ${resultatText}`);
-
-                if (estEnStock) {
-                    await envoyerNotificationNtfy(site.nom, site.url);
-                }
-
-                etatStocks[site.nom] = estEnStock;
-                success = true;
-
-            } catch (error) {
-                console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${error.message}`);
-                if (tentative === 2) {
-                    console.error(`[!] Impossible de vérifier ${site.nom} après 2 tentatives.`);
-                }
+            const $ = cheerio.load(html);
+            
+            // Étape 1 : Détecter la page d'erreur de manière souple via le texte décodé
+            const texteGlobal = $('body').text().toLowerCase();
+            
+            let pageVide = false;
+            if (texteGlobal.includes("aucun résultat")) {
+                pageVide = true;
+            } else if (texteGlobal.includes("aucun resultat")) {
+                pageVide = true;
             }
+            
+            if (pageVide) return false;
+            
+            // Étape 2 : Chercher les mots-clés UNIQUEMENT dans la liste des produits
+            // pour ignorer le mot "anniversaire" présent dans le menu de navigation général
+            let texteProduits = $('.product-list').text().toLowerCase();
+            
+            let zoneProduitVide = false;
+            if (!texteProduits) {
+                zoneProduitVide = true;
+            } else if (texteProduits.trim() === "") {
+                zoneProduitVide = true;
+            }
+            
+            // Si la div .product-list est introuvable, on se rabat sur la balise <main>
+            if (zoneProduitVide) {
+                texteProduits = $('main').text().toLowerCase();
+            }
+            
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => texteProduits.includes(kw));
         }
     }
 
