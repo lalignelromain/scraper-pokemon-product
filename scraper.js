@@ -284,43 +284,45 @@ const SITES = [
         nom: "MICROMANIA",
         url: "https://www.micromania.fr/recherche?q=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
-            if (content.includes("aucun résultat")) return false;
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
+            if (texteGlobal.includes("aucun résultat")) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => texteGlobal.includes(kw));
         }
     },
     {
         nom: "FNAC",
         url: "https://www.fnac.com/SearchResult/ResultList.aspx?Search=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
-            if (content.includes("aucun résultat")) return false;
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
+            if (texteGlobal.includes("aucun résultat")) return false;
 
             let venduParFnac = false;
-            if (content.includes("vendu par fnac")) venduParFnac = true;
-            else if (content.includes("vendu et expédié par fnac")) venduParFnac = true;
+            if (texteGlobal.includes("vendu par fnac")) venduParFnac = true;
+            else if (texteGlobal.includes("vendu et expédié par fnac")) venduParFnac = true;
             
             if (!venduParFnac) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => texteGlobal.includes(kw));
         }
     },
     {
         nom: "KAIRYU",
         url: "https://kairyu.fr/search?q=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
             
             let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("0 résultat")) pageVide = true;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("0 résultat")) pageVide = true;
             
             if (pageVide) return false;
 
-            const $ = cheerio.load(html);
             let zoneProduits = $('.product-grid').text().toLowerCase();
             let zoneVide = false;
             if (!zoneProduits) zoneVide = true;
@@ -335,7 +337,7 @@ const SITES = [
             else if (zoneProduits.trim() === "") zoneVide = true;
             
             if (zoneVide) {
-                zoneProduits = content;
+                zoneProduits = texteGlobal;
             }
 
             let estEpuise = false;
@@ -354,15 +356,15 @@ const SITES = [
         nom: "DESTOCKTCG",
         url: "https://www.destocktcg.fr/search?type=product&q=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
             
             let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("0 résultat")) pageVide = true;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("0 résultat")) pageVide = true;
             
             if (pageVide) return false;
 
-            const $ = cheerio.load(html);
             let zoneProduits = $('.product-grid').text().toLowerCase();
             let zoneVide = false;
             if (!zoneProduits) zoneVide = true;
@@ -377,7 +379,7 @@ const SITES = [
             else if (zoneProduits.trim() === "") zoneVide = true;
             
             if (zoneVide) {
-                zoneProduits = content;
+                zoneProduits = texteGlobal;
             }
 
             let estEpuise = false;
@@ -385,6 +387,8 @@ const SITES = [
             else if (zoneProduits.includes("épuisé")) estEpuise = true;
             else if (zoneProduits.includes("rupture")) estEpuise = true;
             else if (zoneProduits.includes("sold out")) estEpuise = true;
+            else if (zoneProduits.includes("prévenez-moi")) estEpuise = true;
+            else if (zoneProduits.includes("en réassort")) estEpuise = true;
             
             if (estEpuise) return false;
 
@@ -396,28 +400,29 @@ const SITES = [
         nom: "ULTRAJEUX",
         url: "https://www.ultrajeux.com/search.php?search=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
             
             let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("0 article")) pageVide = true;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("0 article")) pageVide = true;
             
             if (pageVide) return false;
 
-            const $ = cheerio.load(html);
             let zoneProduits = $('.contenu').text().toLowerCase();
             let zoneVide = false;
             if (!zoneProduits) zoneVide = true;
             else if (zoneProduits.trim() === "") zoneVide = true;
             
             if (zoneVide) {
-                zoneProduits = content;
+                zoneProduits = texteGlobal;
             }
 
             let estEpuise = false;
             if (zoneProduits.includes("indisponible")) estEpuise = true;
             else if (zoneProduits.includes("épuisé")) estEpuise = true;
             else if (zoneProduits.includes("rupture")) estEpuise = true;
+            else if (zoneProduits.includes("en réassort")) estEpuise = true;
             
             if (estEpuise) return false;
 
@@ -455,24 +460,25 @@ const SITES = [
         nom: "CULTURA",
         url: "https://www.cultura.com/search.html?q=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
             
             let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("0 résultat")) pageVide = true;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("0 résultat")) pageVide = true;
             
             if (pageVide) return false;
 
             let venduParCultura = true;
-            if (content.includes("vendu par")) {
-                if (!content.includes("cultura")) {
+            if (texteGlobal.includes("vendu par")) {
+                if (!texteGlobal.includes("cultura")) {
                     venduParCultura = false;
                 }
             }
             if (!venduParCultura) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => texteGlobal.includes(kw));
         }
     },
     {
@@ -549,48 +555,49 @@ const SITES = [
         nom: "AUCHAN",
         url: "https://www.auchan.fr/recherche?text=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
             
             let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("0 résultat")) pageVide = true;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("0 résultat")) pageVide = true;
             
             if (pageVide) return false;
 
             let venduParAuchan = true;
-            if (content.includes("vendu par")) {
-                if (!content.includes("auchan")) {
+            if (texteGlobal.includes("vendu par")) {
+                if (!texteGlobal.includes("auchan")) {
                     venduParAuchan = false;
                 }
             }
             if (!venduParAuchan) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => texteGlobal.includes(kw));
         }
     },
     {
         nom: "CARREFOUR",
         url: "https://www.carrefour.fr/s?q=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
-            const content = html.toLowerCase();
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
             
             let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("désolé")) pageVide = true;
-            else if (content.includes("ne donne aucun résultat")) pageVide = true;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("désolé")) pageVide = true;
+            else if (texteGlobal.includes("ne donne aucun résultat")) pageVide = true;
             
             if (pageVide) return false;
 
             let venduParCarrefour = true;
-            if (content.includes("vendu par")) {
-                if (!content.includes("carrefour")) {
+            if (texteGlobal.includes("vendu par")) {
+                if (!texteGlobal.includes("carrefour")) {
                     venduParCarrefour = false;
                 }
             }
             if (!venduParCarrefour) return false;
 
-            const $ = cheerio.load(html);
             let targetText = $('.product-card-title').text().toLowerCase();
             
             let isTargetEmpty = false;
@@ -603,7 +610,7 @@ const SITES = [
             if (!targetText) isTargetEmpty = true;
             else if (targetText.trim() === "") isTargetEmpty = true;
             
-            if (isTargetEmpty) targetText = content; 
+            if (isTargetEmpty) targetText = texteGlobal; 
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
             return keywords.some(kw => targetText.includes(kw));
