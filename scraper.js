@@ -1,7 +1,7 @@
 try {
     require('dotenv').config();
 } catch (e) {
-    // Ignoré silencieusement sur GitHub Actions si le module n'est pas présent
+    // Ignoré silencieusement sur GitHub Actions
 }
 
 const axios = require('axios');
@@ -18,7 +18,7 @@ const ETAT_STOCK_FILE = 'etat_stocks.json';
 // --- DIAGNOSTIC D'ENVIRONNEMENT ---
 console.log("=== VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT ===");
 if (!SCRAPER_API_KEY) {
-    console.log("⚠️  ATTENTION : SCRAPER_API_KEY est indéfini ou vide ! Le proxy ne fonctionnera pas (risque d'erreur 403).");
+    console.log("⚠️  ATTENTION : SCRAPER_API_KEY est indéfini ou vide ! Le proxy ne fonctionnera pas.");
 } else {
     console.log("✅ SCRAPER_API_KEY détectée.");
 }
@@ -26,7 +26,7 @@ if (!SCRAPER_API_KEY) {
 if (!NTFY_TOPIC) {
     console.log("⚠️  ATTENTION : NTFY_TOPIC est indéfini ! Les notifications ne partiront pas.");
 } else {
-    console.log(`✅ NTFY_TOPIC détecté (Canal: ${NTFY_TOPIC}).`);
+    console.log(`✅ NTFY_TOPIC détecté (Canal: ***).`);
 }
 console.log("==================================================\n");
 
@@ -44,7 +44,7 @@ function getRandomUserAgent() {
     return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
-// 🚨 Notification URGENTE pour un STOCK TROUVÉ
+// 🚨 Notification URGENTE
 async function envoyerNotificationNtfy(nomSite, url) {
     if (!NTFY_TOPIC) {
         console.log(`[!] Notification ignorée : NTFY_TOPIC non défini.`);
@@ -62,13 +62,13 @@ async function envoyerNotificationNtfy(nomSite, url) {
                 }
             }
         );
-        console.log(`[+] Notification Ntfy (Alerte Stock) envoyée pour ${nomSite}`);
+        console.log(`[+] Notification Ntfy envoyée pour ${nomSite}`);
     } catch (error) {
         console.error(`[-] Erreur lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
     }
 }
 
-// 💓 Notification HEARTBEAT / RECAPITULATIF (UNIQUEMENT À 8H ET 18H)
+// 💓 Notification HEARTBEAT (8h / 18h)
 async function envoyerHeartbeatNtfy(etatStocks) {
     if (!NTFY_TOPIC) return;
 
@@ -92,7 +92,6 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     }
 
     if (stats.dernierHeartbeatSlot === slotCle) {
-        console.log(`[i] Heartbeat pour le créneau ${slotCle} déjà envoyé. Ignoré.`);
         return;
     }
 
@@ -117,11 +116,11 @@ async function envoyerHeartbeatNtfy(etatStocks) {
         stats.dernierHeartbeatSlot = slotCle;
         fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
     } catch (error) {
-        console.error(`[-] Erreur lors de l'envoi du Heartbeat Ntfy:`, error.message);
+        console.error(`[-] Erreur Heartbeat Ntfy:`, error.message);
     }
 }
 
-// Enregistrement des changements par Texte (Anti-bruit)
+// Enregistrement des changements DOM avec nettoyage strict
 function enregistrerTimingEtDom(site, responseHeaders, html) {
     let stats = {};
     if (fs.existsSync(TIMING_FILE)) {
@@ -135,75 +134,58 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     const maintenant = new Date().toISOString();
     const $ = cheerio.load(html);
     
+    // Destruction des balises invisibles et dynamiques avant extraction
+    $('script').remove();$('style').remove();
+    $('noscript').remove();$('meta').remove();
+    $('svg').remove();$('input[type="hidden"]').remove();
+
     let texteVisible = "";
 
     if (site.nom === "KING JOUET") {
         texteVisible = $('.product-list').text();
-        
         let estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $('main').text();
-        
         estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $.text();
-        
     } else if (site.nom === "E.LECLERC") {
         texteVisible = $('main').text();
-        
         let estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $.text();
-        
     } else if (site.nom === "JOUECLUB") {
         texteVisible = $('.c-product-detail').text();
-        
         let estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $('main').text();
-        
         estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $.text();
-        
     } else if (site.nom === "SMYTHS TOYS") {
         texteVisible = $('#addToCartForm').text();
-        
         let estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $('.product-add-to-cart').text();
-        
         estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $('#product-details').text();
-        
         estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $.text();
-        
     } else {
         texteVisible = $('main').text();
-        
         let estVide = false;
         if (!texteVisible) estVide = true;
         else if (texteVisible.trim() === "") estVide = true;
-        
         if (estVide) texteVisible = $.text();
     }
 
@@ -274,14 +256,12 @@ const SITES = [
         useProxy: false,
         verifier: (html) => {
             const enStockSchema = html.includes('schema.org/InStock');
-            
             let boutonActif = false;
             if (html.includes('c-product-add-to-cart')) {
                 if (!html.includes('Indisponible')) {
                     boutonActif = true;
                 }
             }
-            
             if (enStockSchema) return true;
             if (boutonActif) return true;
             return false;
@@ -474,7 +454,23 @@ async function verifierTousLesStocks() {
                 success = true;
 
             } catch (error) {
-                console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${error.message}`);
+                let detailErreur = "";
+                if (error.response) {
+                    if (error.response.data) {
+                        if (typeof error.response.data === 'string') {
+                            detailErreur = error.response.data;
+                        } else {
+                            detailErreur = JSON.stringify(error.response.data);
+                        }
+                    }
+                }
+                
+                let messageGlobal = error.message;
+                if (detailErreur !== "") {
+                    messageGlobal += " | ScraperAPI Info: " + detailErreur;
+                }
+                
+                console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${messageGlobal}`);
                 if (tentative === 2) {
                     console.error(`[!] Impossible de vérifier ${site.nom} après 2 tentatives.`);
                 }
@@ -483,11 +479,8 @@ async function verifierTousLesStocks() {
     }
 
     fs.writeFileSync(ETAT_STOCK_FILE, JSON.stringify(etatStocks, null, 2));
-    
     await envoyerHeartbeatNtfy(etatStocks);
-    
     console.log("\n✅ Vérification terminée.");
 }
 
-// Lancement
 verifierTousLesStocks();
