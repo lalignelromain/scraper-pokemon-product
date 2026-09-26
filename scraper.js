@@ -9,6 +9,21 @@ const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const TIMING_FILE = 'timing_stats.json';
 const ETAT_STOCK_FILE = 'etat_stocks.json';
 
+// --- DIAGNOSTIC D'ENVIRONNEMENT ---
+console.log("=== VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT ===");
+if (!SCRAPER_API_KEY) {
+    console.log("⚠️  ATTENTION : SCRAPER_API_KEY est indéfini ou vide ! Le proxy ne fonctionnera pas (risque d'erreur 403).");
+} else {
+    console.log("✅ SCRAPER_API_KEY détectée.");
+}
+
+if (!NTFY_TOPIC) {
+    console.log("⚠️  ATTENTION : NTFY_TOPIC est indéfini ! Les notifications ne partiront pas.");
+} else {
+    console.log(`✅ NTFY_TOPIC détecté (Canal: ${NTFY_TOPIC}).`);
+}
+console.log("==================================================\n");
+
 // Utilitaires
 function getHash(data) {
     return crypto.createHash('md5').update(data).digest('hex');
@@ -64,7 +79,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
         return;
     }
 
-    // Clé unique de créneau (ex: "2026-09-25-8h") pour ne pas réémettre si le script tourne toutes les 10-15 min
+    // Clé unique de créneau (ex: "2026-09-25-8h")
     const dateDuJour = now.toISOString().slice(0, 10);
     const slotCle = `${dateDuJour}-${heureFR}h`;
 
@@ -78,7 +93,6 @@ async function envoyerHeartbeatNtfy(etatStocks) {
         return;
     }
 
-    // Construction du message de synthèse
     let message = "🤖 BILAN DES STOCKS (8h / 18h)\n\n";
     for (const site of SITES) {
         const enStock = etatStocks[site.nom];
@@ -97,7 +111,6 @@ async function envoyerHeartbeatNtfy(etatStocks) {
         });
         console.log(`[+] Notification Ntfy (Heartbeat ${heureFR}h) envoyée.`);
 
-        // Sauvegarde du créneau pour éviter les doublons
         stats.dernierHeartbeatSlot = slotCle;
         fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
     } catch (error) {
@@ -118,28 +131,33 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
 
     const maintenant = new Date().toISOString();
     const $ = cheerio.load(html);
+    
+    // Nettoyage radical des éléments dynamiques invisibles (CSRF tokens, scripts)
+    $('script').remove();
+    $('style').remove();$('input[type="hidden"]').remove();
+
     let conteneurHtml = "";
 
     if (site.nom === "KING JOUET") {
         conteneurHtml = $('.product-list').html();
         if (!conteneurHtml) conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = html;
+        if (!conteneurHtml) conteneurHtml = $.html(); // Utilise le HTML nettoyé globalement
     } else if (site.nom === "E.LECLERC") {
-        conteneurHtml = $('script[type="application/ld+json"]').html();
-        if (!conteneurHtml) conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = html;
+        // Pour Leclerc, le JSON-LD ayant été supprimé par le nettoyage ci-dessus, on prend le main
+        conteneurHtml = $('main').html();
+        if (!conteneurHtml) conteneurHtml = $.html();
     } else if (site.nom === "JOUECLUB") {
         conteneurHtml = $('.c-product-detail').html();
         if (!conteneurHtml) conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = html;
+        if (!conteneurHtml) conteneurHtml = $.html();
     } else if (site.nom === "SMYTHS TOYS") {
         conteneurHtml = $('#addToCartForm').html();
         if (!conteneurHtml) conteneurHtml = $('.product-add-to-cart').html();
         if (!conteneurHtml) conteneurHtml = $('#product-details').html();
-        if (!conteneurHtml) conteneurHtml = html;
+        if (!conteneurHtml) conteneurHtml = $.html();
     } else {
         conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = html;
+        if (!conteneurHtml) conteneurHtml = $.html();
     }
 
     const currentHash = getHash(conteneurHtml);
@@ -231,6 +249,7 @@ const SITES = [
                 }
             }
 
+            // Récupération spécifique du JSON-LD sur le HTML brut avant nettoyage
             const $ = cheerio.load(html);
             const jsonLdContent = $('script[type="application/ld+json"]').html();
 
@@ -358,7 +377,8 @@ async function verifierTousLesStocks() {
 
                 if (site.useProxy) {
                     if (SCRAPER_API_KEY) {
-                        let extraParams = "&country_code=fr";
+                        // Ajout du paramètre render=true pour forcer l'exécution JS du côté du proxy (anti 403)
+                        let extraParams = "&country_code=fr&render=true";
                         
                         if (site.nom === "KING JOUET") {
                             if (tentative === 1) {
@@ -398,12 +418,10 @@ async function verifierTousLesStocks() {
                 }
                 console.log(`[${site.nom}] Résultat : ${resultatText}`);
 
-                // Envoi de la notification si le produit est en stock (sans filtre anti-spam)
                 if (estEnStock) {
                     await envoyerNotificationNtfy(site.nom, site.url);
                 }
 
-                // Sauvegarde de l'état pour les rapports Heartbeat
                 etatStocks[site.nom] = estEnStock;
                 success = true;
 
@@ -418,7 +436,6 @@ async function verifierTousLesStocks() {
 
     fs.writeFileSync(ETAT_STOCK_FILE, JSON.stringify(etatStocks, null, 2));
     
-    // Tentative d'envoi du rapport Heartbeat (filtré à 8h et 18h)
     await envoyerHeartbeatNtfy(etatStocks);
     
     console.log("\n✅ Vérification terminée.");
