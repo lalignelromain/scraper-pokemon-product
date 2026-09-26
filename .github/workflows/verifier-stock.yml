@@ -32,13 +32,13 @@ jobs:
           if [ ! -f timing_stats.json ]; then echo "{}" > timing_stats.json; fi
           if [ ! -f etat_stocks.json ]; then echo "{}" > etat_stocks.json; fi
           
-          # Installation des modules nécessaires
-          npm install axios cheerio
+          # Installation des modules nécessaires pour Playwright
+          npm install cheerio playwright
+          npx playwright install --with-deps chromium
 
       - name: Exécuter le script de vérification
         env:
           # Les secrets définis dans les paramètres du dépôt GitHub
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: node scraper.js
 
