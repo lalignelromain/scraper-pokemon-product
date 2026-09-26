@@ -1,13 +1,8 @@
 {
   "SMYTHS TOYS": {
-    "dernierHash": "dfd8046a58826bebf88d03ec9a2a0ffa",
-    "derniereVerif": "2026-09-26T06:45:30.831Z",
+    "dernierHash": "d41d8cd98f00b204e9800998ecf8427e",
+    "derniereVerif": "2026-09-26T06:52:04.857Z",
     "historiqueMisesAJour": [
-      {
-        "timestampLocal": "2026-09-26T02:50:26.208Z",
-        "timestampServeur": null,
-        "type": "CHANGEMENT_DOM"
-      },
       {
         "timestampLocal": "2026-09-26T02:55:25.493Z",
         "timestampServeur": null,
@@ -252,12 +247,16 @@
         "timestampLocal": "2026-09-26T06:36:26.046Z",
         "timestampServeur": null,
         "type": "CHANGEMENT_TEXTE"
+      },
+      {
+        "timestampLocal": "2026-09-26T06:52:04.857Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "JOUECLUB": {
-    "dernierHash": "d6a4320c9e8236971b8e6fc2d0937854",
-    "derniereVerif": "2026-09-26T06:45:31.557Z",
+    "dernierHash": "1b8cf68d5af919ab036f16b8d47cab36",
+    "derniereVerif": "2026-09-26T06:52:09.892Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-25T13:40:31.537Z",
@@ -293,18 +292,32 @@
         "timestampLocal": "2026-09-26T06:36:26.462Z",
         "timestampServeur": "Sat, 26 Sep 2026 06:36:26 GMT",
         "type": "CHANGEMENT_TEXTE"
+      },
+      {
+        "timestampLocal": "2026-09-26T06:52:09.892Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "E.LECLERC": {
-    "dernierHash": "ff1671880cc0feee2276f3f02f35a494",
-    "derniereVerif": "2026-09-25T15:15:46.445Z",
-    "historiqueMisesAJour": []
+    "dernierHash": "9efb1f845f7087ddf7ef79777a8f040c",
+    "derniereVerif": "2026-09-26T06:52:16.595Z",
+    "historiqueMisesAJour": [
+      {
+        "timestampLocal": "2026-09-26T06:52:16.595Z",
+        "type": "CHANGEMENT_BOUTON"
+      }
+    ]
   },
   "dernierHeartbeatSlot": "2026-09-26-8h",
   "KING JOUET": {
-    "dernierHash": "c56df20f81dc709f90d73c02f00e7aef",
-    "derniereVerif": "2026-09-25T06:56:23.240Z",
-    "historiqueMisesAJour": []
+    "dernierHash": "d917ebb9ff609bce2261e161d4267a41",
+    "derniereVerif": "2026-09-26T06:52:22.032Z",
+    "historiqueMisesAJour": [
+      {
+        "timestampLocal": "2026-09-26T06:52:22.032Z",
+        "type": "CHANGEMENT_BOUTON"
+      }
+    ]
   }
 }
