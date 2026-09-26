@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
 
       - name: 📦 Installation des dépendances
-        run: npm install
+        run: npm install playwright cheerio dotenv
 
       - name: 🎭 Installation des navigateurs Playwright
         run: npx playwright install --with-deps chromium
