@@ -398,17 +398,12 @@ async function verifierTousLesStocks() {
                 }
                 console.log(`[${site.nom}] Résultat : ${resultatText}`);
 
-                let etaitEnStock = false;
-                if (etatStocks[site.nom] === true) {
-                    etaitEnStock = true;
-                }
-                
+                // Envoi de la notification si le produit est en stock (sans filtre anti-spam)
                 if (estEnStock) {
-                    if (!etaitEnStock) {
-                        await envoyerNotificationNtfy(site.nom, site.url);
-                    }
+                    await envoyerNotificationNtfy(site.nom, site.url);
                 }
 
+                // Sauvegarde de l'état pour les rapports Heartbeat
                 etatStocks[site.nom] = estEnStock;
                 success = true;
 
