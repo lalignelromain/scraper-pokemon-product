@@ -1,7 +1,7 @@
 {
   "SMYTHS TOYS": {
     "dernierHash": "d41d8cd98f00b204e9800998ecf8427e",
-    "derniereVerif": "2026-09-26T10:21:01.433Z",
+    "derniereVerif": "2026-09-26T10:26:13.300Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T02:55:25.493Z",
@@ -256,7 +256,7 @@
   },
   "JOUECLUB": {
     "dernierHash": "1b8cf68d5af919ab036f16b8d47cab36",
-    "derniereVerif": "2026-09-26T10:21:05.544Z",
+    "derniereVerif": "2026-09-26T10:26:17.710Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-25T13:40:31.537Z",
@@ -301,7 +301,7 @@
   },
   "E.LECLERC": {
     "dernierHash": "9efb1f845f7087ddf7ef79777a8f040c",
-    "derniereVerif": "2026-09-26T10:21:36.432Z",
+    "derniereVerif": "2026-09-26T10:26:55.702Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T06:52:16.595Z",
@@ -352,7 +352,7 @@
   "dernierHeartbeatSlot": "2026-09-26-8h",
   "KING JOUET": {
     "dernierHash": "5a54b5f4cd64f738b696141197a82343",
-    "derniereVerif": "2026-09-26T10:21:29.119Z",
+    "derniereVerif": "2026-09-26T10:26:49.461Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T06:52:22.032Z",
@@ -382,12 +382,12 @@
   },
   "CULTURA": {
     "dernierHash": "e92912aec4d6c782f14bfcb93ddd82a9",
-    "derniereVerif": "2026-09-26T10:21:32.226Z",
+    "derniereVerif": "2026-09-26T10:26:51.763Z",
     "historiqueMisesAJour": []
   },
   "CARREFOUR": {
     "dernierHash": "e92912aec4d6c782f14bfcb93ddd82a9",
-    "derniereVerif": "2026-09-26T10:21:43.659Z",
+    "derniereVerif": "2026-09-26T10:27:02.914Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:18:02.326Z",
@@ -413,7 +413,7 @@
   },
   "AUCHAN": {
     "dernierHash": "3c5572cc13391c80792e9f503a748554",
-    "derniereVerif": "2026-09-26T10:21:40.356Z",
+    "derniereVerif": "2026-09-26T10:27:00.339Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:21:33.884Z",
@@ -458,8 +458,8 @@
     ]
   },
   "MICROMANIA": {
-    "dernierHash": "fdf6cdbe8e2106f90565e4291d73d963",
-    "derniereVerif": "2026-09-26T10:21:09.428Z",
+    "dernierHash": "2735297ee24e830e7093ec1db3821ed6",
+    "derniereVerif": "2026-09-26T10:26:23.772Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:42:11.252Z",
@@ -476,17 +476,21 @@
       {
         "timestampLocal": "2026-09-26T08:31:22.771Z",
         "type": "CHANGEMENT_BOUTON"
+      },
+      {
+        "timestampLocal": "2026-09-26T10:26:23.772Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "FNAC": {
     "dernierHash": "4208d89e64801c9382f25073d78643e8",
-    "derniereVerif": "2026-09-26T10:21:12.888Z",
+    "derniereVerif": "2026-09-26T10:26:26.347Z",
     "historiqueMisesAJour": []
   },
   "KAIRYU": {
-    "dernierHash": "86889f270e0505329a062c8177c47e26",
-    "derniereVerif": "2026-09-26T10:21:18.462Z",
+    "dernierHash": "ce63b61fd7f4c600210ad7b5039610be",
+    "derniereVerif": "2026-09-26T10:26:32.675Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:30:38.965Z",
@@ -575,17 +579,21 @@
       {
         "timestampLocal": "2026-09-26T10:16:24.107Z",
         "type": "CHANGEMENT_BOUTON"
+      },
+      {
+        "timestampLocal": "2026-09-26T10:26:32.675Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "DESTOCKTCG": {
     "dernierHash": "19fcaac568f6060a73d692c45625dc8f",
-    "derniereVerif": "2026-09-26T10:21:22.745Z",
+    "derniereVerif": "2026-09-26T10:26:38.325Z",
     "historiqueMisesAJour": []
   },
   "ULTRAJEUX": {
     "dernierHash": "d41d8cd98f00b204e9800998ecf8427e",
-    "derniereVerif": "2026-09-26T10:21:25.529Z",
+    "derniereVerif": "2026-09-26T10:26:44.390Z",
     "historiqueMisesAJour": []
   }
 }
