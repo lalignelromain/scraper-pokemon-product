@@ -4,25 +4,18 @@ try {
     // Ignoré silencieusement sur GitHub Actions
 }
 
-const axios = require('axios');
+const { chromium } = require('playwright');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const crypto = require('crypto');
 
 // Configuration
-const SCRAPER_API_KEY = process.env.SCRAPER_API_KEY;
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const TIMING_FILE = 'timing_stats.json';
 const ETAT_STOCK_FILE = 'etat_stocks.json';
 
 // --- DIAGNOSTIC D'ENVIRONNEMENT ---
 console.log("=== VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT ===");
-if (!SCRAPER_API_KEY) {
-    console.log("⚠️  ATTENTION : SCRAPER_API_KEY est indéfini ou vide ! Le proxy ne fonctionnera pas.");
-} else {
-    console.log("✅ SCRAPER_API_KEY détectée.");
-}
-
 if (!NTFY_TOPIC) {
     console.log("⚠️  ATTENTION : NTFY_TOPIC est indéfini ! Les notifications ne partiront pas.");
 } else {
@@ -52,16 +45,16 @@ async function envoyerNotificationNtfy(nomSite, url) {
     }
 
     try {
-        await axios.post(`https://ntfy.sh/${NTFY_TOPIC}`, 
-            `🚨 ALERTE STOCK 🚨\nLe Coffret Dresseur d'Élite est EN STOCK sur ${nomSite} !\nLien : ${url}`,
-            {
-                headers: {
-                    'Title': 'Pokémon 30ème - En Stock !',
-                    'Priority': 'urgent',
-                    'Tags': 'rotating_light,pokemon'
-                }
+        const fetchArgs = {
+            method: 'POST',
+            body: `🚨 ALERTE STOCK 🚨\nLe Coffret Dresseur d'Élite est EN STOCK sur ${nomSite} !\nLien : ${url}`,
+            headers: {
+                'Title': 'Pokémon 30ème - En Stock !',
+                'Priority': 'urgent',
+                'Tags': 'rotating_light,pokemon'
             }
-        );
+        };
+        await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
         console.log(`[+] Notification Ntfy envoyée pour ${nomSite}`);
     } catch (error) {
         console.error(`[-] Erreur lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
@@ -101,16 +94,19 @@ async function envoyerHeartbeatNtfy(etatStocks) {
         const statusStr = enStock ? "🟢 EN STOCK" : "🔴 Rupture";
         message += `${site.nom} : ${statusStr}\n`;
     }
-    message += "\n✅ Scraper opérationnel.";
+    message += "\n✅ Scraper Playwright opérationnel.";
 
     try {
-        await axios.post(`https://ntfy.sh/${NTFY_TOPIC}`, message, {
+        const fetchArgs = {
+            method: 'POST',
+            body: message,
             headers: {
                 'Title': `💓 Heartbeat (${heureFR}h00)`,
                 'Priority': 'low',
                 'Tags': 'robot,bar_chart'
             }
-        });
+        };
+        await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
         console.log(`[+] Notification Ntfy (Heartbeat ${heureFR}h) envoyée.`);
 
         stats.dernierHeartbeatSlot = slotCle;
@@ -120,8 +116,8 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     }
 }
 
-// Enregistrement des changements DOM avec nettoyage strict
-function enregistrerTimingEtDom(site, responseHeaders, html) {
+// Enregistrement ultra-ciblé du DOM (Boutons d'achat uniquement)
+function enregistrerTimingEtDom(site, html) {
     let stats = {};
     if (fs.existsSync(TIMING_FILE)) {
         try { 
@@ -134,73 +130,45 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     const maintenant = new Date().toISOString();
     const $ = cheerio.load(html);
     
-    // Destruction des balises invisibles et dynamiques avant extraction
-    $('script').remove();$('style').remove();
-    $('noscript').remove();$('meta').remove();
-    $('svg').remove();$('input[type="hidden"]').remove();
-
-    let texteVisible = "";
+    let texteCible = "";
 
     if (site.nom === "KING JOUET") {
-        texteVisible = $('.product-list').text();
+        texteCible = $('.buy-box').text();
         let estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $('main').text();
-        estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $.text();
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.add-to-cart').text();
     } else if (site.nom === "E.LECLERC") {
-        texteVisible = $('main').text();
+        texteCible = $('button[data-test="add-to-cart"]').text();
         let estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $.text();
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.btn-add-to-cart').text();
     } else if (site.nom === "JOUECLUB") {
-        texteVisible = $('.c-product-detail').text();
+        texteCible = $('.c-product-add-to-cart').text();
         let estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $('main').text();
-        estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $.text();
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.product-actions').text();
     } else if (site.nom === "SMYTHS TOYS") {
-        texteVisible = $('#addToCartForm').text();
+        texteCible = $('#addToCartForm button[type="submit"]').text();
         let estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $('.product-add-to-cart').text();
-        estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $('#product-details').text();
-        estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $.text();
-    } else {
-        texteVisible = $('main').text();
-        let estVide = false;
-        if (!texteVisible) estVide = true;
-        else if (texteVisible.trim() === "") estVide = true;
-        if (estVide) texteVisible = $.text();
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.js-add-to-cart-button').text();
+    } 
+
+    let fallbackVide = false;
+    if (!texteCible) fallbackVide = true;
+    else if (texteCible.trim() === "") fallbackVide = true;
+
+    if (fallbackVide) {
+        texteCible = $('title').text();
     }
 
-    const cleanedText = texteVisible.replace(/\s+/g, ' ').trim();
+    const cleanedText = texteCible.replace(/\s+/g, ' ').trim();
     const currentHash = getHash(cleanedText);
     
-    let serverDate = null;
-    if (responseHeaders) {
-        if (responseHeaders['date']) {
-            serverDate = responseHeaders['date'];
-        } else if (responseHeaders['last-modified']) {
-            serverDate = responseHeaders['last-modified'];
-        }
-    }
-
     if (!stats[site.nom]) {
         stats[site.nom] = {
             dernierHash: currentHash,
@@ -210,11 +178,10 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     } else {
         if (stats[site.nom].dernierHash) {
             if (stats[site.nom].dernierHash !== currentHash) {
-                console.log(`📌 [MAJ TEXTE DÉTECTÉE] ${site.nom} à ${maintenant}`);
+                console.log(`📌 [MAJ BOUTON DÉTECTÉE] ${site.nom} à ${maintenant}`);
                 stats[site.nom].historiqueMisesAJour.push({
                     timestampLocal: maintenant,
-                    timestampServeur: serverDate,
-                    type: "CHANGEMENT_TEXTE"
+                    type: "CHANGEMENT_BOUTON"
                 });
                 stats[site.nom].dernierHash = currentHash;
             }
@@ -236,7 +203,6 @@ const SITES = [
     {
         nom: "SMYTHS TOYS",
         url: "https://www.smythstoys.com/fr/fr-fr/jouets/jeux-de-societe-et-puzzles/cartes-a-collectionner/cartes-pokemon/pokemon-coffret-dresseur-delite-30eme-anniversaire/p/261821",
-        useProxy: false,
         verifier: (html) => {
             const $ = cheerio.load(html);
             const btn = $('#addToCartForm button[type="submit"], .js-add-to-cart-button');
@@ -253,7 +219,6 @@ const SITES = [
     {
         nom: "JOUECLUB",
         url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
-        useProxy: false,
         verifier: (html) => {
             const enStockSchema = html.includes('schema.org/InStock');
             let boutonActif = false;
@@ -270,7 +235,6 @@ const SITES = [
     {
         nom: "E.LECLERC",
         url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
-        useProxy: true,
         verifier: (html) => {
             const content = html.toLowerCase();
             if (content.includes('vendu et expédié par')) {
@@ -358,7 +322,6 @@ const SITES = [
     {
         nom: "KING JOUET",
         url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
-        useProxy: true,
         verifier: (html) => {
             const content = html.toLowerCase();
             if (content.includes("aucun résultat n'a été trouvé")) return false;
@@ -379,6 +342,15 @@ async function verifierTousLesStocks() {
         }
     }
 
+    console.log("🚀 Démarrage du navigateur Playwright...");
+    let browser = null;
+    try {
+        browser = await chromium.launch({ headless: true });
+    } catch (e) {
+        console.error("[-] Impossible de lancer Playwright :", e.message);
+        return;
+    }
+
     for (const site of SITES) {
         console.log(`\n⏳ Vérification en cours pour : ${site.nom}`);
         let success = false;
@@ -387,56 +359,25 @@ async function verifierTousLesStocks() {
             if (success) break;
 
             try {
-                let baseParams = "";
-                if (site.url.includes('?')) {
-                    baseParams = "&_t=" + Date.now();
-                } else {
-                    baseParams = "?_t=" + Date.now();
-                }
-                
-                let targetUrl = site.url + baseParams;
-                
-                let headers = {
-                    'User-Agent': getRandomUserAgent(),
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
-                };
+                const context = await browser.newContext({
+                    userAgent: getRandomUserAgent(),
+                    locale: 'fr-FR',
+                    viewport: { width: 1280, height: 720 }
+                });
 
-                let requestOptions = { method: 'GET', timeout: 60000 };
+                const page = await context.newPage();
+                
+                // Navigation avec un délai étendu pour laisser le JavaScript s'exécuter
+                await page.goto(site.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+                
+                // Temporisation humaine aléatoire (entre 2s et 5s) pour rassurer les protections
+                const randomDelay = Math.floor(Math.random() * 3000) + 2000;
+                await page.waitForTimeout(randomDelay);
 
-                if (site.useProxy) {
-                    if (SCRAPER_API_KEY) {
-                        let extraParams = "&country_code=fr&render=true";
-                        
-                        if (site.nom === "KING JOUET") {
-                            if (tentative === 1) {
-                                extraParams += "&premium=true";
-                            } else {
-                                extraParams += "&premium=true&device_type=desktop";
-                            }
-                        } else if (site.nom === "E.LECLERC") {
-                            extraParams += "&premium=true&keep_headers=true";
-                            requestOptions.headers = headers;
-                        }
-                        
-                        targetUrl = "http://api.scraperapi.com?api_key=" + SCRAPER_API_KEY + "&url=" + encodeURIComponent(site.url) + extraParams + "&_t=" + Date.now();
-                    }
-                } else {
-                    requestOptions.headers = headers;
-                }
-
-                requestOptions.url = targetUrl;
+                const html = await page.content();
+                await context.close();
                 
-                const response = await axios(requestOptions);
-                
-                let html = "";
-                if (typeof response.data === 'string') {
-                    html = response.data;
-                } else {
-                    html = JSON.stringify(response.data);
-                }
-                
-                enregistrerTimingEtDom(site, response.headers, html);
+                enregistrerTimingEtDom(site, html);
 
                 const estEnStock = site.verifier(html);
                 
@@ -454,29 +395,15 @@ async function verifierTousLesStocks() {
                 success = true;
 
             } catch (error) {
-                let detailErreur = "";
-                if (error.response) {
-                    if (error.response.data) {
-                        if (typeof error.response.data === 'string') {
-                            detailErreur = error.response.data;
-                        } else {
-                            detailErreur = JSON.stringify(error.response.data);
-                        }
-                    }
-                }
-                
-                let messageGlobal = error.message;
-                if (detailErreur !== "") {
-                    messageGlobal += " | ScraperAPI Info: " + detailErreur;
-                }
-                
-                console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${messageGlobal}`);
+                console.error(`[-] Erreur pour ${site.nom} (Tentative ${tentative}/2) : ${error.message}`);
                 if (tentative === 2) {
                     console.error(`[!] Impossible de vérifier ${site.nom} après 2 tentatives.`);
                 }
             }
         }
     }
+
+    await browser.close();
 
     fs.writeFileSync(ETAT_STOCK_FILE, JSON.stringify(etatStocks, null, 2));
     await envoyerHeartbeatNtfy(etatStocks);
