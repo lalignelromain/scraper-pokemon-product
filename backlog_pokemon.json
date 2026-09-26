@@ -1,0 +1,75 @@
+{
+  "SMYTHS TOYS": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "JOUECLUB": {
+    "historique": [
+      {
+        "date": "26/09/2026 14:35:51",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "EAN"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true
+    }
+  },
+  "MICROMANIA": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "FNAC": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "KAIRYU": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "DESTOCKTCG": {
+    "historique": [
+      {
+        "date": "26/09/2026 14:35:51",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "Mots-clés"
+      },
+      {
+        "date": "26/09/2026 14:35:51",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true,
+      "MINI_TIN_JOUR": true
+    }
+  },
+  "ULTRAJEUX": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "KING JOUET": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "CULTURA": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "E.LECLERC": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "AUCHAN": {
+    "historique": [],
+    "etatActuel": {}
+  },
+  "CARREFOUR": {
+    "historique": [],
+    "etatActuel": {}
+  }
+}
