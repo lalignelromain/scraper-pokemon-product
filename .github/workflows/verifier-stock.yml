@@ -1,50 +1,40 @@
-name: Verification Stock Jouets
+name: Pokemon Scraper & Backlog
 
 on:
-  schedule:
-    # S'exécute automatiquement toutes les 5 minutes
-    - cron: '*/5 * * * *'
-  repository_dispatch:
-    # Permet le déclenchement instantané via le Webhook cron-job.org
-    types: [run-scraper]
   workflow_dispatch:
-    # Permet d'exécuter le script à la main pour tester
+  schedule:
+    - cron: '*/5 * * * *'
 
 permissions:
-  contents: write # Donne accès au git push pour sauvegarder les logs et l'état des stocks
+  contents: write
 
 jobs:
-  check-stock:
+  run-scraper:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Récupérer le code
+      - name: 📥 Récupération du code
         uses: actions/checkout@v4
 
-      - name: Configurer Node.js
+      - name: ⬡ Installation de Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Installer les dépendances et initialiser les fichiers JSON
-        run: |
-          # Initialisation des fichiers sans utiliser les doubles pipes
-          if [ ! -f timing_stats.json ]; then echo "{}" > timing_stats.json; fi
-          if [ ! -f etat_stocks.json ]; then echo "{}" > etat_stocks.json; fi
-          
-          # Installation des modules nécessaires pour Playwright
-          npm install cheerio playwright
-          npx playwright install --with-deps chromium
+      - name: 📦 Installation des dépendances
+        run: npm install
 
-      - name: Exécuter le script de vérification
-        env:
-          # Les secrets définis dans les paramètres du dépôt GitHub
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      - name: 🎭 Installation des navigateurs Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: 🚀 Lancement du Scraper
         run: node scraper.js
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
 
-      - name: Sauvegarder les logs et états
-        if: always()
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(data): mise à jour des états de stock et timings"
-          file_pattern: "timing_stats.json etat_stocks.json"
+      - name: 💾 Sauvegarde du Backlog Infini
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add backlog_pokemon.json
+          git commit -m "📝 Maj Backlog : Nouveaux événements détectés" || echo "Aucun changement détecté, pas de commit"
+          git push
