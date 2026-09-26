@@ -12,11 +12,11 @@ const fs = require('fs');
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const BACKLOG_FILE = 'backlog_pokemon.json';
 
-// Cibles de surveillance pour le Backlog
+// Cibles de surveillance enrichies pour dissocier les alertes Ntfy
 const CIBLES = {
-    "ETB_30ANS": { ean: "0196214144835", keywords: ["coffret dresseur d'élite", "etb 30"] },
-    "MINI_TIN_NUIT": { ean: "0196214146655", keywords: ["nuit mewtwo", "mini tin nuit"] },
-    "MINI_TIN_JOUR": { ean: "0196214146402", keywords: ["jour mew", "mini tin jour"] }
+    "ETB_30ANS": { nom: "ETB 30ème Anniversaire", ean: "0196214144835", keywords: ["coffret dresseur d'élite", "etb 30"] },
+    "MINI_TIN_NUIT": { nom: "Mini Tin NUIT (Mewtwo)", ean: "0196214146655", keywords: ["nuit mewtwo", "mini tin nuit"] },
+    "MINI_TIN_JOUR": { nom: "Mini Tin JOUR (Mew)", ean: "0196214146402", keywords: ["jour mew", "mini tin jour"] }
 };
 
 // --- DIAGNOSTIC D'ENVIRONNEMENT ---
@@ -38,8 +38,8 @@ function getRandomUserAgent() {
     return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
-// 🚨 Notification URGENTE
-async function envoyerNotificationNtfy(nomSite, url) {
+// 🚨 Notification URGENTE (Spécifique par produit)
+async function envoyerNotificationNtfy(nomSite, url, nomProduit) {
     if (!NTFY_TOPIC) {
         console.log(`[!] Notification ignorée : NTFY_TOPIC non défini.`);
         return;
@@ -48,15 +48,15 @@ async function envoyerNotificationNtfy(nomSite, url) {
     try {
         const fetchArgs = {
             method: 'POST',
-            body: `🚨 ALERTE STOCK 🚨\nUn produit Pokémon 30ème est EN STOCK sur ${nomSite} !\nLien : ${url}`,
+            body: `🚨 ALERTE STOCK 🚨\nLe produit [ ${nomProduit} ] est EN STOCK sur ${nomSite} !\nLien : ${url}`,
             headers: {
-                'Title': 'Pokémon 30ème - En Stock !',
+                'Title': `Pokémon 30e : ${nomProduit} !`,
                 'Priority': 'urgent',
                 'Tags': 'rotating_light,pokemon'
             }
         };
         await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
-        console.log(`[+] Notification Ntfy envoyée pour ${nomSite}`);
+        console.log(`[+] Notification Ntfy envoyée pour ${nomSite} - ${nomProduit}`);
     } catch (error) {
         console.error(`[-] Erreur lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
     }
@@ -110,7 +110,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     }
 }
 
-// Configuration des sites (URLs élargies pour englober les Mini Tins là où c'est possible)
+// Configuration des sites AVEC LES SÉLECTEURS CHEERIO STRICTS
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -118,10 +118,7 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const btn = $('#addToCartForm button[type="submit"], .js-add-to-cart-button');
-            if (!btn.length) return false;
-            let isDisabled = btn.prop('disabled');
-            let hasClass = btn.hasClass('cursor-not-allowed');
-            if (isDisabled || hasClass) return false;
+            if (!btn.length || btn.prop('disabled') || btn.hasClass('cursor-not-allowed')) return false;
             return true;
         }
     },
@@ -129,13 +126,12 @@ const SITES = [
         nom: "JOUECLUB",
         url: "https://www.joueclub.fr/pokemon/pokemon-30eme-anniversaire-coffret-dresseur-d-elite-0196214144835.html",
         verifier: (html) => {
-            const enStockSchema = html.includes('schema.org/InStock');
-            let boutonActif = false;
-            if (html.includes('c-product-add-to-cart') && !html.includes('Indisponible')) {
-                boutonActif = true;
-            }
-            if (enStockSchema || boutonActif) return true;
-            return false;
+            const $ = cheerio.load(html);
+            const boutonActif = $('.c-product-add-to-cart, .product-actions').length > 0;
+            const textePage = $('body').text().toLowerCase();
+            
+            if (textePage.includes('indisponible') || textePage.includes('épuisé')) return false;
+            return boutonActif || html.includes('schema.org/InStock');
         }
     },
     {
@@ -143,12 +139,13 @@ const SITES = [
         url: "https://www.micromania.fr/recherche?q=pokemon+30+ans",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            let zoneProduits = $('.search-results').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('.product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('body').text().toLowerCase();
-            if (zoneProduits.includes("aucun résultat")) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+            const zoneProduits = $('.search-results, .product-grid').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat")) return false;
+            
+            const boutonAchat = $('.add-to-cart, .product-actions');
+            if (boutonAchat.length === 0) return false;
+
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -156,13 +153,14 @@ const SITES = [
         url: "https://www.fnac.com/SearchResult/ResultList.aspx?Search=pokemon+30+ans",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            let zoneProduits = $('.ResultList-items').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('body').text().toLowerCase();
-            if (zoneProduits.includes("aucun résultat")) return false;
-            let venduParFnac = zoneProduits.includes("vendu par fnac") || zoneProduits.includes("vendu et expédié par fnac");
-            if (!venduParFnac) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+            const zoneProduits = $('.ResultList-items, .articleList').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat")) return false;
+            if (!zoneProduits.includes("vendu par fnac") && !zoneProduits.includes("vendu et expédié par fnac")) return false;
+            
+            const boutonAchat = $('.f-buyBox-button, .add-to-cart');
+            if (boutonAchat.length === 0) return false;
+
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -170,16 +168,11 @@ const SITES = [
         url: "https://kairyu.fr/search?q=pokemon+30",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            const texteGlobal = $('body').text().toLowerCase();
-            if (texteGlobal.includes("aucun résultat") || texteGlobal.includes("0 résultat")) return false;
-            let zoneProduits = $('.product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('.grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = texteGlobal;
+            const zoneProduits = $('.product-grid, .grid, .product-list').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
+            if (zoneProduits.includes("en réassort") || zoneProduits.includes("épuisé") || zoneProduits.includes("sold out") || zoneProduits.includes("rupture")) return false;
             
-            let estEpuise = zoneProduits.includes("en réassort") || zoneProduits.includes("épuisé") || zoneProduits.includes("sold out") || zoneProduits.includes("rupture");
-            if (estEpuise) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -187,16 +180,11 @@ const SITES = [
         url: "https://www.destocktcg.fr/search?type=product&q=pokemon+30",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            const texteGlobal = $('body').text().toLowerCase();
-            if (texteGlobal.includes("aucun résultat") || texteGlobal.includes("0 résultat")) return false;
-            let zoneProduits = $('.product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('.grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = texteGlobal;
+            const zoneProduits = $('.product-grid, .grid').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
+            if (["temporairement indisponible", "épuisé", "rupture", "sold out", "prévenez-moi", "en réassort"].some(kw => zoneProduits.includes(kw))) return false;
             
-            let estEpuise = zoneProduits.includes("temporairement indisponible") || zoneProduits.includes("épuisé") || zoneProduits.includes("rupture") || zoneProduits.includes("sold out") || zoneProduits.includes("prévenez-moi") || zoneProduits.includes("en réassort");
-            if (estEpuise) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -204,15 +192,11 @@ const SITES = [
         url: "https://www.ultrajeux.com/search.php?search=pokemon+30",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            const texteGlobal = $('body').text().toLowerCase();
-            if (texteGlobal.includes("aucun résultat") || texteGlobal.includes("0 article")) return false;
-            let zoneProduits = $('.contenu').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = texteGlobal;
+            const zoneProduits = $('.contenu, .products-list').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 article")) return false;
+            if (["indisponible", "épuisé", "rupture", "en réassort"].some(kw => zoneProduits.includes(kw))) return false;
             
-            let estEpuise = zoneProduits.includes("indisponible") || zoneProduits.includes("épuisé") || zoneProduits.includes("rupture") || zoneProduits.includes("en réassort");
-            if (estEpuise) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -220,12 +204,13 @@ const SITES = [
         url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            const texteGlobal = $('body').text().toLowerCase();
-            if (texteGlobal.includes("aucun résultat") || texteGlobal.includes("aucun resultat")) return false;
-            let texteProduits = $('.product-list').text().toLowerCase();
-            if (!texteProduits || texteProduits.trim() === "") texteProduits = $('main').text().toLowerCase();
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => texteProduits.includes(kw));
+            const zoneProduits = $('.product-list, .product-grid').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("aucun resultat")) return false;
+            
+            const boutonAchat = $('.buy-box, .add-to-cart');
+            if (boutonAchat.length === 0) return false;
+
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -233,48 +218,31 @@ const SITES = [
         url: "https://www.cultura.com/search.html?q=pokemon+30",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            let zoneProduits = $('.search-result-items').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('body').text().toLowerCase();
-            if (zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
+            const zoneProduits = $('.search-result-items, .product-grid').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("cultura")) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+            
+            const boutonAchat = $('.add-to-cart, .cart-button');
+            if (boutonAchat.length === 0) return false;
+
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
         nom: "E.LECLERC",
         url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
         verifier: (html) => {
-            const content = html.toLowerCase();
-            if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
-
             const $ = cheerio.load(html);
-            const jsonLdContent = $('script[type="application/ld+json"]').html();
-
-            if (jsonLdContent) {
-                try {
-                    const data = JSON.parse(jsonLdContent);
-                    let offers = data.offers || (data.mainEntity && data.mainEntity.offers) || [];
-                    let offersList = Array.isArray(offers) ? offers : [offers];
-                    
-                    return offersList.some(o => {
-                        let estVendeurOfficiel = !o.seller || (o.seller.name && o.seller.name.toLowerCase().includes('leclerc'));
-                        let enStock = (o.availability === 'https://schema.org/InStock' || o.availability === 'InStock');
-                        return estVendeurOfficiel && enStock;
-                    });
-                } catch (e) {}
-            }
-
-            let contientTermeCoffret = content.includes('dresseur') || content.includes('etb');
-            if (!contientTermeCoffret) return false;
+            const content = html.toLowerCase();
             
-            let estIndisponible = content.includes('indisponible') || content.includes('épuisé');
-            let contientAjout = content.includes('ajouter au panier') || content.includes('schema.org/instock');
+            if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
+            if (content.includes('indisponible') || content.includes('épuisé')) return false;
+            
+            const boutonAchat = $('button[data-test="add-to-cart"], .btn-add-to-cart');
+            let contientAjout = boutonAchat.length > 0 || content.includes('schema.org/instock');
             let contientRetrait = content.includes('retrait en magasin') || content.includes('vendu par e.leclerc');
             
-            if (estIndisponible) return false;
-            if (contientAjout && contientRetrait) return true;
-            return false;
+            return contientAjout && contientRetrait;
         }
     },
     {
@@ -282,12 +250,14 @@ const SITES = [
         url: "https://www.auchan.fr/recherche?text=pokemon+30+ans",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            let zoneProduits = $('.search-results').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('body').text().toLowerCase();
-            if (zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
+            const zoneProduits = $('.search-results, .list__container').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("auchan")) return false;
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => zoneProduits.includes(kw));
+
+            const boutonAchat = $('.product-action__button, .btn--primary');
+            if (boutonAchat.length === 0) return false;
+
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -295,18 +265,14 @@ const SITES = [
         url: "https://www.carrefour.fr/s?q=pokemon+30+ans",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            let zoneProduits = $('.product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('.search-results').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.trim() === "") zoneProduits = $('body').text().toLowerCase();
-            if (zoneProduits.includes("aucun résultat") || zoneProduits.includes("désolé") || zoneProduits.includes("ne donne aucun résultat")) return false;
+            const zoneProduits = $('.product-grid, .search-results').text().toLowerCase();
+            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("désolé") || zoneProduits.includes("ne donne aucun résultat")) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("carrefour")) return false;
 
-            let targetText = $('.product-card-title').text().toLowerCase();
-            if (!targetText || targetText.trim() === "") targetText = $('.main-title').text().toLowerCase();
-            if (!targetText || targetText.trim() === "") targetText = zoneProduits; 
+            const boutonAchat = $('.add-to-cart-button, .pl-button');
+            if (boutonAchat.length === 0) return false;
 
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => targetText.includes(kw));
+            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
     }
 ];
@@ -363,6 +329,7 @@ async function verifierTousLesStocks() {
                 await context.close();
                 
                 // === ÉTAPE 1 : SCRUTATION DU BACKLOG (EAN & Mots-Clés) ===
+                let produitsPresentsSurLaPage = [];
                 for (const [cleProduit, criteres] of Object.entries(CIBLES)) {
                     let detecte = false;
                     let methode = "";
@@ -373,6 +340,10 @@ async function verifierTousLesStocks() {
                     } else if (criteres.keywords.some(kw => htmlLower.includes(kw))) {
                         detecte = true;
                         methode = "Mots-clés";
+                    }
+
+                    if (detecte) {
+                        produitsPresentsSurLaPage.push(criteres.nom);
                     }
 
                     const dernierEtat = backlog[site.nom].etatActuel[cleProduit] || false;
@@ -403,7 +374,15 @@ async function verifierTousLesStocks() {
                 console.log(`[${site.nom}] Résultat Global : ${resultatText}`);
 
                 if (estEnStock) {
-                    await envoyerNotificationNtfy(site.nom, site.url);
+                    // Envoi d'alertes Ntfy distinctes selon les produits détectés
+                    if (produitsPresentsSurLaPage.length > 0) {
+                        for (const prod of produitsPresentsSurLaPage) {
+                            await envoyerNotificationNtfy(site.nom, site.url, prod);
+                        }
+                    } else {
+                        // Cas de secours si le vérificateur valide mais que les EANs stricts n'ont pas matché
+                        await envoyerNotificationNtfy(site.nom, site.url, "Produit 30ème Anniversaire générique");
+                    }
                 }
 
                 etatStocks[site.nom] = estEnStock;
