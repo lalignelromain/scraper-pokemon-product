@@ -1,7 +1,7 @@
 {
   "SMYTHS TOYS": {
     "dernierHash": "d41d8cd98f00b204e9800998ecf8427e",
-    "derniereVerif": "2026-09-26T09:31:17.473Z",
+    "derniereVerif": "2026-09-26T09:36:40.559Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T02:55:25.493Z",
@@ -256,7 +256,7 @@
   },
   "JOUECLUB": {
     "dernierHash": "1b8cf68d5af919ab036f16b8d47cab36",
-    "derniereVerif": "2026-09-26T09:31:22.561Z",
+    "derniereVerif": "2026-09-26T09:36:44.555Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-25T13:40:31.537Z",
@@ -300,8 +300,8 @@
     ]
   },
   "E.LECLERC": {
-    "dernierHash": "bbf94b34eb32268ada57a3be5062fe7d",
-    "derniereVerif": "2026-09-26T09:31:53.838Z",
+    "dernierHash": "9efb1f845f7087ddf7ef79777a8f040c",
+    "derniereVerif": "2026-09-26T09:37:17.832Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T06:52:16.595Z",
@@ -342,13 +342,17 @@
       {
         "timestampLocal": "2026-09-26T09:31:53.838Z",
         "type": "CHANGEMENT_BOUTON"
+      },
+      {
+        "timestampLocal": "2026-09-26T09:37:17.832Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "dernierHeartbeatSlot": "2026-09-26-8h",
   "KING JOUET": {
     "dernierHash": "5a54b5f4cd64f738b696141197a82343",
-    "derniereVerif": "2026-09-26T09:31:48.934Z",
+    "derniereVerif": "2026-09-26T09:37:09.096Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T06:52:22.032Z",
@@ -370,12 +374,12 @@
   },
   "CULTURA": {
     "dernierHash": "e92912aec4d6c782f14bfcb93ddd82a9",
-    "derniereVerif": "2026-09-26T09:31:51.357Z",
+    "derniereVerif": "2026-09-26T09:37:13.828Z",
     "historiqueMisesAJour": []
   },
   "CARREFOUR": {
     "dernierHash": "e92912aec4d6c782f14bfcb93ddd82a9",
-    "derniereVerif": "2026-09-26T09:32:03.163Z",
+    "derniereVerif": "2026-09-26T09:37:27.255Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:18:02.326Z",
@@ -384,8 +388,8 @@
     ]
   },
   "AUCHAN": {
-    "dernierHash": "bbf94b34eb32268ada57a3be5062fe7d",
-    "derniereVerif": "2026-09-26T09:31:58.603Z",
+    "dernierHash": "3c5572cc13391c80792e9f503a748554",
+    "derniereVerif": "2026-09-26T09:37:23.770Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:21:33.884Z",
@@ -422,12 +426,16 @@
       {
         "timestampLocal": "2026-09-26T09:31:58.603Z",
         "type": "CHANGEMENT_BOUTON"
+      },
+      {
+        "timestampLocal": "2026-09-26T09:37:23.770Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "MICROMANIA": {
     "dernierHash": "fdf6cdbe8e2106f90565e4291d73d963",
-    "derniereVerif": "2026-09-26T09:31:25.877Z",
+    "derniereVerif": "2026-09-26T09:36:47.816Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:42:11.252Z",
@@ -449,12 +457,12 @@
   },
   "FNAC": {
     "dernierHash": "4208d89e64801c9382f25073d78643e8",
-    "derniereVerif": "2026-09-26T09:31:30.132Z",
+    "derniereVerif": "2026-09-26T09:36:51.173Z",
     "historiqueMisesAJour": []
   },
   "KAIRYU": {
-    "dernierHash": "a38ef440b0303ddd005bde687b3225cc",
-    "derniereVerif": "2026-09-26T09:31:36.550Z",
+    "dernierHash": "ce63b61fd7f4c600210ad7b5039610be",
+    "derniereVerif": "2026-09-26T09:36:55.757Z",
     "historiqueMisesAJour": [
       {
         "timestampLocal": "2026-09-26T07:30:38.965Z",
@@ -519,17 +527,21 @@
       {
         "timestampLocal": "2026-09-26T09:31:36.550Z",
         "type": "CHANGEMENT_BOUTON"
+      },
+      {
+        "timestampLocal": "2026-09-26T09:36:55.757Z",
+        "type": "CHANGEMENT_BOUTON"
       }
     ]
   },
   "DESTOCKTCG": {
     "dernierHash": "19fcaac568f6060a73d692c45625dc8f",
-    "derniereVerif": "2026-09-26T09:31:40.451Z",
+    "derniereVerif": "2026-09-26T09:37:01.299Z",
     "historiqueMisesAJour": []
   },
   "ULTRAJEUX": {
     "dernierHash": "d41d8cd98f00b204e9800998ecf8427e",
-    "derniereVerif": "2026-09-26T09:31:45.921Z",
+    "derniereVerif": "2026-09-26T09:37:04.133Z",
     "historiqueMisesAJour": []
   }
 }
