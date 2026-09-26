@@ -228,7 +228,7 @@ function enregistrerTimingEtDom(site, html) {
     fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
 }
 
-// Configuration des sites
+// Configuration des sites (Ordonnés du plus rapide/léger au plus lourd)
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -263,14 +263,90 @@ const SITES = [
         }
     },
     {
+        nom: "MICROMANIA",
+        url: "https://www.micromania.fr/recherche?q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            if (content.includes("aucun résultat")) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "FNAC",
+        url: "https://www.fnac.com/SearchResult/ResultList.aspx?Search=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            if (content.includes("aucun résultat")) return false;
+
+            let venduParFnac = false;
+            if (content.includes("vendu par fnac")) venduParFnac = true;
+            else if (content.includes("vendu et expédié par fnac")) venduParFnac = true;
+            
+            if (!venduParFnac) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "KING JOUET",
+        url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
+        verifier: (html) => {
+            const $ = cheerio.load(html);
+            const texteGlobal = $('body').text().toLowerCase();
+            
+            let pageVide = false;
+            if (texteGlobal.includes("aucun résultat")) pageVide = true;
+            else if (texteGlobal.includes("aucun resultat")) pageVide = true;
+            
+            if (pageVide) return false;
+            
+            let texteProduits = $('.product-list').text().toLowerCase();
+            let zoneProduitVide = false;
+            if (!texteProduits) zoneProduitVide = true;
+            else if (texteProduits.trim() === "") zoneProduitVide = true;
+            
+            if (zoneProduitVide) {
+                texteProduits = $('main').text().toLowerCase();
+            }
+            
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => texteProduits.includes(kw));
+        }
+    },
+    {
+        nom: "CULTURA",
+        url: "https://www.cultura.com/search.html?q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("0 résultat")) pageVide = true;
+            
+            if (pageVide) return false;
+
+            let venduParCultura = true;
+            if (content.includes("vendu par")) {
+                if (!content.includes("cultura")) {
+                    venduParCultura = false;
+                }
+            }
+            if (!venduParCultura) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
         nom: "E.LECLERC",
         url: "https://www.e.leclerc/fp/pokemon-me03-coffret-dresseur-elite-0196214136380",
         verifier: (html) => {
             const content = html.toLowerCase();
             if (content.includes('vendu et expédié par')) {
-                if (!content.includes('e.leclerc')) {
-                    return false;
-                }
+                if (!content.includes('e.leclerc')) return false;
             }
 
             const $ = cheerio.load(html);
@@ -283,41 +359,28 @@ const SITES = [
                     
                     if (!offers) {
                         if (data.mainEntity) {
-                            if (data.mainEntity.offers) {
-                                offers = data.mainEntity.offers;
-                            }
+                            if (data.mainEntity.offers) offers = data.mainEntity.offers;
                         }
                     }
                     if (!offers) offers = [];
                     
                     let offersList = [];
-                    if (Array.isArray(offers)) {
-                        offersList = offers;
-                    } else {
-                        offersList = [offers];
-                    }
+                    if (Array.isArray(offers)) offersList = offers;
+                    else offersList = [offers];
                     
                     return offersList.some(o => {
                         let estVendeurOfficiel = false;
-                        if (!o.seller) {
-                            estVendeurOfficiel = true;
-                        } else if (o.seller.name) {
-                            if (o.seller.name.toLowerCase().includes('leclerc')) {
-                                estVendeurOfficiel = true;
-                            }
+                        if (!o.seller) estVendeurOfficiel = true;
+                        else if (o.seller.name) {
+                            if (o.seller.name.toLowerCase().includes('leclerc')) estVendeurOfficiel = true;
                         }
                         
                         let enStock = false;
-                        if (o.availability === 'https://schema.org/InStock') {
-                            enStock = true;
-                        } else if (o.availability === 'InStock') {
-                            enStock = true;
-                        }
+                        if (o.availability === 'https://schema.org/InStock') enStock = true;
+                        else if (o.availability === 'InStock') enStock = true;
                         
                         if (estVendeurOfficiel) {
-                            if (enStock) {
-                                return true;
-                            }
+                            if (enStock) return true;
                         }
                         return false;
                     });
@@ -339,99 +402,12 @@ const SITES = [
             
             let aBoutonAchatOfficiel = false;
             if (contientAjout) {
-                if (contientRetrait) {
-                    aBoutonAchatOfficiel = true;
-                }
+                if (contientRetrait) aBoutonAchatOfficiel = true;
             }
             
             if (estIndisponible) return false;
             if (aBoutonAchatOfficiel) return true;
             return false;
-        }
-    },
-    {
-        nom: "KING JOUET",
-        url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
-        verifier: (html) => {
-            const $ = cheerio.load(html);
-            
-            const texteGlobal = $('body').text().toLowerCase();
-            
-            let pageVide = false;
-            if (texteGlobal.includes("aucun résultat")) {
-                pageVide = true;
-            } else if (texteGlobal.includes("aucun resultat")) {
-                pageVide = true;
-            }
-            
-            if (pageVide) return false;
-            
-            let texteProduits = $('.product-list').text().toLowerCase();
-            
-            let zoneProduitVide = false;
-            if (!texteProduits) {
-                zoneProduitVide = true;
-            } else if (texteProduits.trim() === "") {
-                zoneProduitVide = true;
-            }
-            
-            if (zoneProduitVide) {
-                texteProduits = $('main').text().toLowerCase();
-            }
-            
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => texteProduits.includes(kw));
-        }
-    },
-    {
-        nom: "CULTURA",
-        // Utilisation d'une URL de recherche en attendant le lien direct du produit
-        url: "https://www.cultura.com/search.html?q=coffret+dresseur+elite+pokemon+30+ans",
-        verifier: (html) => {
-            const content = html.toLowerCase();
-            
-            let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("0 résultat")) pageVide = true;
-            
-            if (pageVide) return false;
-
-            // Filtre strict Marketplace Cultura
-            let venduParCultura = true;
-            if (content.includes("vendu par")) {
-                if (!content.includes("cultura")) {
-                    venduParCultura = false;
-                }
-            }
-            if (!venduParCultura) return false;
-
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
-        }
-    },
-    {
-        nom: "CARREFOUR",
-        url: "https://www.carrefour.fr/s?q=coffret+dresseur+elite+pokemon+30+ans",
-        verifier: (html) => {
-            const content = html.toLowerCase();
-            
-            let pageVide = false;
-            if (content.includes("aucun résultat")) pageVide = true;
-            else if (content.includes("désolé")) pageVide = true;
-            
-            if (pageVide) return false;
-
-            // Filtre strict Marketplace Carrefour
-            let venduParCarrefour = true;
-            if (content.includes("vendu par")) {
-                if (!content.includes("carrefour")) {
-                    venduParCarrefour = false;
-                }
-            }
-            if (!venduParCarrefour) return false;
-
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
         }
     },
     {
@@ -446,7 +422,6 @@ const SITES = [
             
             if (pageVide) return false;
 
-            // Filtre strict Marketplace Auchan
             let venduParAuchan = true;
             if (content.includes("vendu par")) {
                 if (!content.includes("auchan")) {
@@ -460,35 +435,43 @@ const SITES = [
         }
     },
     {
-        nom: "MICROMANIA",
-        url: "https://www.micromania.fr/recherche?q=coffret+dresseur+elite+pokemon+30+ans",
+        nom: "CARREFOUR",
+        url: "https://www.carrefour.fr/s?q=coffret+dresseur+elite+pokemon+30+ans",
         verifier: (html) => {
             const content = html.toLowerCase();
             
-            if (content.includes("aucun résultat")) return false;
-
-            // Micromania ne gère pas de marketplace externe sur les cartes Pokémon neuves
-            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
-        }
-    },
-    {
-        nom: "FNAC",
-        url: "https://www.fnac.com/SearchResult/ResultList.aspx?Search=coffret+dresseur+elite+pokemon+30+ans",
-        verifier: (html) => {
-            const content = html.toLowerCase();
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("désolé")) pageVide = true;
+            else if (content.includes("ne donne aucun résultat")) pageVide = true;
             
-            if (content.includes("aucun résultat")) return false;
+            if (pageVide) return false;
 
-            // Filtre strict Marketplace Fnac (souvent le plus spammé par les scalpers)
-            let venduParFnac = false;
-            if (content.includes("vendu par fnac")) venduParFnac = true;
-            else if (content.includes("vendu et expédié par fnac")) venduParFnac = true;
+            let venduParCarrefour = true;
+            if (content.includes("vendu par")) {
+                if (!content.includes("carrefour")) {
+                    venduParCarrefour = false;
+                }
+            }
+            if (!venduParCarrefour) return false;
+
+            const $ = cheerio.load(html);
+            let targetText = $('.product-card-title').text().toLowerCase();
             
-            if (!venduParFnac) return false;
+            let isTargetEmpty = false;
+            if (!targetText) isTargetEmpty = true;
+            else if (targetText.trim() === "") isTargetEmpty = true;
+            
+            if (isTargetEmpty) targetText = $('.main-title').text().toLowerCase();
+            
+            isTargetEmpty = false;
+            if (!targetText) isTargetEmpty = true;
+            else if (targetText.trim() === "") isTargetEmpty = true;
+            
+            if (isTargetEmpty) targetText = content; 
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => targetText.includes(kw));
         }
     }
 ];
