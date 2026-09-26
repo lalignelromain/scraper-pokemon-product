@@ -79,7 +79,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     const minutesFR = parseInt(parts.find(p => p.type === 'minute').value, 10);
 
     // Déclenchement uniquement dans les 5 premières minutes des heures clés
-    const isScheduledReportHour = [8, 12, 18, 22].includes(heureFR) && minutesFR < 15;
+    const isScheduledReportHour = [8, 12, 18, 20, 22].includes(heureFR) && minutesFR < 15;
 
     if (!isScheduledReportHour) {
         return;
