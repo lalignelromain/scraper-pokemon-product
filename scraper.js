@@ -186,6 +186,24 @@ function enregistrerTimingEtDom(site, html) {
         if (!texteCible) estVide = true;
         else if (texteCible.trim() === "") estVide = true;
         if (estVide) texteCible = $('.add-to-cart').text();
+    } else if (site.nom === "KAIRYU") {
+        texteCible = $('.product-form__submit').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.add-to-cart').text();
+    } else if (site.nom === "ULTRAJEUX") {
+        texteCible = $('.btn-panier').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.add-to-cart').text();
+    } else if (site.nom === "DESTOCKTCG") {
+        texteCible = $('.product-form__submit').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.add-to-cart').text();
     }
 
     let fallbackVide = false;
@@ -228,7 +246,7 @@ function enregistrerTimingEtDom(site, html) {
     fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
 }
 
-// Configuration des sites (Ordonnés du plus rapide/léger au plus lourd)
+// Configuration des sites (Ordonnés du plus rapide au plus lourd)
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -285,6 +303,54 @@ const SITES = [
             else if (content.includes("vendu et expédié par fnac")) venduParFnac = true;
             
             if (!venduParFnac) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "KAIRYU",
+        url: "https://kairyu.fr/search?q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("0 résultat")) pageVide = true;
+            
+            if (pageVide) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "DESTOCKTCG",
+        url: "https://www.destocktcg.fr/search?type=product&q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("0 résultat")) pageVide = true;
+            
+            if (pageVide) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "ULTRAJEUX",
+        url: "https://www.ultrajeux.com/search.php?search=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("0 article")) pageVide = true;
+            
+            if (pageVide) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
             return keywords.some(kw => content.includes(kw));
