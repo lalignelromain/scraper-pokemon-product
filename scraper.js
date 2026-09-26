@@ -320,6 +320,13 @@ const SITES = [
             
             if (pageVide) return false;
 
+            let estEpuise = false;
+            if (content.includes("en réassort")) estEpuise = true;
+            else if (content.includes("épuisé")) estEpuise = true;
+            else if (content.includes("sold out")) estEpuise = true;
+            
+            if (estEpuise) return false;
+
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
             return keywords.some(kw => content.includes(kw));
         }
@@ -336,6 +343,13 @@ const SITES = [
             
             if (pageVide) return false;
 
+            let estEpuise = false;
+            if (content.includes("temporairement indisponible")) estEpuise = true;
+            else if (content.includes("épuisé")) estEpuise = true;
+            else if (content.includes("rupture")) estEpuise = true;
+            
+            if (estEpuise) return false;
+
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
             return keywords.some(kw => content.includes(kw));
         }
@@ -351,6 +365,13 @@ const SITES = [
             else if (content.includes("0 article")) pageVide = true;
             
             if (pageVide) return false;
+
+            let estEpuise = false;
+            if (content.includes("indisponible")) estEpuise = true;
+            else if (content.includes("épuisé")) estEpuise = true;
+            else if (content.includes("rupture")) estEpuise = true;
+            
+            if (estEpuise) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
             return keywords.some(kw => content.includes(kw));
