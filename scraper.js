@@ -156,7 +156,37 @@ function enregistrerTimingEtDom(site, html) {
         if (!texteCible) estVide = true;
         else if (texteCible.trim() === "") estVide = true;
         if (estVide) texteCible = $('.js-add-to-cart-button').text();
-    } 
+    } else if (site.nom === "CULTURA") {
+        texteCible = $('.add-to-cart').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.cart-button').text();
+    } else if (site.nom === "CARREFOUR") {
+        texteCible = $('.add-to-cart-button').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.pl-button').text();
+    } else if (site.nom === "AUCHAN") {
+        texteCible = $('.product-action__button').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.btn--primary').text();
+    } else if (site.nom === "MICROMANIA") {
+        texteCible = $('.add-to-cart').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.product-actions').text();
+    } else if (site.nom === "FNAC") {
+        texteCible = $('.f-buyBox-button').text();
+        let estVide = false;
+        if (!texteCible) estVide = true;
+        else if (texteCible.trim() === "") estVide = true;
+        if (estVide) texteCible = $('.add-to-cart').text();
+    }
 
     let fallbackVide = false;
     if (!texteCible) fallbackVide = true;
@@ -351,6 +381,114 @@ const SITES = [
             
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
             return keywords.some(kw => texteProduits.includes(kw));
+        }
+    },
+    {
+        nom: "CULTURA",
+        // Utilisation d'une URL de recherche en attendant le lien direct du produit
+        url: "https://www.cultura.com/search.html?q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("0 résultat")) pageVide = true;
+            
+            if (pageVide) return false;
+
+            // Filtre strict Marketplace Cultura
+            let venduParCultura = true;
+            if (content.includes("vendu par")) {
+                if (!content.includes("cultura")) {
+                    venduParCultura = false;
+                }
+            }
+            if (!venduParCultura) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "CARREFOUR",
+        url: "https://www.carrefour.fr/s?q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("désolé")) pageVide = true;
+            
+            if (pageVide) return false;
+
+            // Filtre strict Marketplace Carrefour
+            let venduParCarrefour = true;
+            if (content.includes("vendu par")) {
+                if (!content.includes("carrefour")) {
+                    venduParCarrefour = false;
+                }
+            }
+            if (!venduParCarrefour) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "AUCHAN",
+        url: "https://www.auchan.fr/recherche?text=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            let pageVide = false;
+            if (content.includes("aucun résultat")) pageVide = true;
+            else if (content.includes("0 résultat")) pageVide = true;
+            
+            if (pageVide) return false;
+
+            // Filtre strict Marketplace Auchan
+            let venduParAuchan = true;
+            if (content.includes("vendu par")) {
+                if (!content.includes("auchan")) {
+                    venduParAuchan = false;
+                }
+            }
+            if (!venduParAuchan) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "MICROMANIA",
+        url: "https://www.micromania.fr/recherche?q=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            if (content.includes("aucun résultat")) return false;
+
+            // Micromania ne gère pas de marketplace externe sur les cartes Pokémon neuves
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
+        }
+    },
+    {
+        nom: "FNAC",
+        url: "https://www.fnac.com/SearchResult/ResultList.aspx?Search=coffret+dresseur+elite+pokemon+30+ans",
+        verifier: (html) => {
+            const content = html.toLowerCase();
+            
+            if (content.includes("aucun résultat")) return false;
+
+            // Filtre strict Marketplace Fnac (souvent le plus spammé par les scalpers)
+            let venduParFnac = false;
+            if (content.includes("vendu par fnac")) venduParFnac = true;
+            else if (content.includes("vendu et expédié par fnac")) venduParFnac = true;
+            
+            if (!venduParFnac) return false;
+
+            const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
+            return keywords.some(kw => content.includes(kw));
         }
     }
 ];
