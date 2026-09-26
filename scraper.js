@@ -246,7 +246,7 @@ function enregistrerTimingEtDom(site, html) {
     fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
 }
 
-// Configuration des sites (Ordonnés du plus rapide au plus lourd)
+// Configuration des sites
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -320,15 +320,34 @@ const SITES = [
             
             if (pageVide) return false;
 
+            const $ = cheerio.load(html);
+            let zoneProduits = $('.product-grid').text().toLowerCase();
+            let zoneVide = false;
+            if (!zoneProduits) zoneVide = true;
+            else if (zoneProduits.trim() === "") zoneVide = true;
+            
+            if (zoneVide) {
+                zoneProduits = $('.grid').text().toLowerCase();
+            }
+            
+            zoneVide = false;
+            if (!zoneProduits) zoneVide = true;
+            else if (zoneProduits.trim() === "") zoneVide = true;
+            
+            if (zoneVide) {
+                zoneProduits = content;
+            }
+
             let estEpuise = false;
-            if (content.includes("en réassort")) estEpuise = true;
-            else if (content.includes("épuisé")) estEpuise = true;
-            else if (content.includes("sold out")) estEpuise = true;
+            if (zoneProduits.includes("en réassort")) estEpuise = true;
+            else if (zoneProduits.includes("épuisé")) estEpuise = true;
+            else if (zoneProduits.includes("sold out")) estEpuise = true;
+            else if (zoneProduits.includes("rupture")) estEpuise = true;
             
             if (estEpuise) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -343,15 +362,34 @@ const SITES = [
             
             if (pageVide) return false;
 
+            const $ = cheerio.load(html);
+            let zoneProduits = $('.product-grid').text().toLowerCase();
+            let zoneVide = false;
+            if (!zoneProduits) zoneVide = true;
+            else if (zoneProduits.trim() === "") zoneVide = true;
+            
+            if (zoneVide) {
+                zoneProduits = $('.grid').text().toLowerCase();
+            }
+            
+            zoneVide = false;
+            if (!zoneProduits) zoneVide = true;
+            else if (zoneProduits.trim() === "") zoneVide = true;
+            
+            if (zoneVide) {
+                zoneProduits = content;
+            }
+
             let estEpuise = false;
-            if (content.includes("temporairement indisponible")) estEpuise = true;
-            else if (content.includes("épuisé")) estEpuise = true;
-            else if (content.includes("rupture")) estEpuise = true;
+            if (zoneProduits.includes("temporairement indisponible")) estEpuise = true;
+            else if (zoneProduits.includes("épuisé")) estEpuise = true;
+            else if (zoneProduits.includes("rupture")) estEpuise = true;
+            else if (zoneProduits.includes("sold out")) estEpuise = true;
             
             if (estEpuise) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => zoneProduits.includes(kw));
         }
     },
     {
@@ -366,15 +404,25 @@ const SITES = [
             
             if (pageVide) return false;
 
+            const $ = cheerio.load(html);
+            let zoneProduits = $('.contenu').text().toLowerCase();
+            let zoneVide = false;
+            if (!zoneProduits) zoneVide = true;
+            else if (zoneProduits.trim() === "") zoneVide = true;
+            
+            if (zoneVide) {
+                zoneProduits = content;
+            }
+
             let estEpuise = false;
-            if (content.includes("indisponible")) estEpuise = true;
-            else if (content.includes("épuisé")) estEpuise = true;
-            else if (content.includes("rupture")) estEpuise = true;
+            if (zoneProduits.includes("indisponible")) estEpuise = true;
+            else if (zoneProduits.includes("épuisé")) estEpuise = true;
+            else if (zoneProduits.includes("rupture")) estEpuise = true;
             
             if (estEpuise) return false;
 
             const keywords = ["célébration", "30 ans", "anniversaire", "celebrations"];
-            return keywords.some(kw => content.includes(kw));
+            return keywords.some(kw => zoneProduits.includes(kw));
         }
     },
     {
