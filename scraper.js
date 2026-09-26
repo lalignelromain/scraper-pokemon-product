@@ -1,3 +1,9 @@
+try {
+    require('dotenv').config();
+} catch (e) {
+    // Ignoré silencieusement sur GitHub Actions si le module n'est pas présent
+}
+
 const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
@@ -67,19 +73,16 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     if (!NTFY_TOPIC) return;
 
     const now = new Date();
-    // Récupération de l'heure en France (Europe/Paris)
     const heureFR = parseInt(new Intl.DateTimeFormat('fr-FR', {
         timeZone: 'Europe/Paris',
         hour: 'numeric',
         hour12: false
     }).format(now), 10);
 
-    // On ne déclenche qu'à 8h et 18h
     if (heureFR !== 8 && heureFR !== 18) {
         return;
     }
 
-    // Clé unique de créneau (ex: "2026-09-25-8h")
     const dateDuJour = now.toISOString().slice(0, 10);
     const slotCle = `${dateDuJour}-${heureFR}h`;
 
@@ -118,7 +121,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     }
 }
 
-// Enregistrement des changements DOM et Timings
+// Enregistrement des changements par Texte (Anti-bruit)
 function enregistrerTimingEtDom(site, responseHeaders, html) {
     let stats = {};
     if (fs.existsSync(TIMING_FILE)) {
@@ -132,35 +135,80 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     const maintenant = new Date().toISOString();
     const $ = cheerio.load(html);
     
-    // Nettoyage radical des éléments dynamiques invisibles (CSRF tokens, scripts)
-    $('script').remove();
-    $('style').remove();$('input[type="hidden"]').remove();
-
-    let conteneurHtml = "";
+    let texteVisible = "";
 
     if (site.nom === "KING JOUET") {
-        conteneurHtml = $('.product-list').html();
-        if (!conteneurHtml) conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = $.html(); // Utilise le HTML nettoyé globalement
+        texteVisible = $('.product-list').text();
+        
+        let estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $('main').text();
+        
+        estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $.text();
+        
     } else if (site.nom === "E.LECLERC") {
-        // Pour Leclerc, le JSON-LD ayant été supprimé par le nettoyage ci-dessus, on prend le main
-        conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = $.html();
+        texteVisible = $('main').text();
+        
+        let estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $.text();
+        
     } else if (site.nom === "JOUECLUB") {
-        conteneurHtml = $('.c-product-detail').html();
-        if (!conteneurHtml) conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = $.html();
+        texteVisible = $('.c-product-detail').text();
+        
+        let estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $('main').text();
+        
+        estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $.text();
+        
     } else if (site.nom === "SMYTHS TOYS") {
-        conteneurHtml = $('#addToCartForm').html();
-        if (!conteneurHtml) conteneurHtml = $('.product-add-to-cart').html();
-        if (!conteneurHtml) conteneurHtml = $('#product-details').html();
-        if (!conteneurHtml) conteneurHtml = $.html();
+        texteVisible = $('#addToCartForm').text();
+        
+        let estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $('.product-add-to-cart').text();
+        
+        estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $('#product-details').text();
+        
+        estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $.text();
+        
     } else {
-        conteneurHtml = $('main').html();
-        if (!conteneurHtml) conteneurHtml = $.html();
+        texteVisible = $('main').text();
+        
+        let estVide = false;
+        if (!texteVisible) estVide = true;
+        else if (texteVisible.trim() === "") estVide = true;
+        
+        if (estVide) texteVisible = $.text();
     }
 
-    const currentHash = getHash(conteneurHtml);
+    const cleanedText = texteVisible.replace(/\s+/g, ' ').trim();
+    const currentHash = getHash(cleanedText);
     
     let serverDate = null;
     if (responseHeaders) {
@@ -180,11 +228,11 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
     } else {
         if (stats[site.nom].dernierHash) {
             if (stats[site.nom].dernierHash !== currentHash) {
-                console.log(`📌 [MAJ DOM DÉTECTÉE] ${site.nom} à ${maintenant}`);
+                console.log(`📌 [MAJ TEXTE DÉTECTÉE] ${site.nom} à ${maintenant}`);
                 stats[site.nom].historiqueMisesAJour.push({
                     timestampLocal: maintenant,
                     timestampServeur: serverDate,
-                    type: "CHANGEMENT_DOM"
+                    type: "CHANGEMENT_TEXTE"
                 });
                 stats[site.nom].dernierHash = currentHash;
             }
@@ -192,8 +240,10 @@ function enregistrerTimingEtDom(site, responseHeaders, html) {
         stats[site.nom].derniereVerif = maintenant;
     }
 
-    if (stats[site.nom].historiqueMisesAJour && stats[site.nom].historiqueMisesAJour.length > 50) {
-        stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
+    if (stats[site.nom].historiqueMisesAJour) {
+        if (stats[site.nom].historiqueMisesAJour.length > 50) {
+            stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
+        }
     }
 
     fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
@@ -249,7 +299,6 @@ const SITES = [
                 }
             }
 
-            // Récupération spécifique du JSON-LD sur le HTML brut avant nettoyage
             const $ = cheerio.load(html);
             const jsonLdContent = $('script[type="application/ld+json"]').html();
 
@@ -377,7 +426,6 @@ async function verifierTousLesStocks() {
 
                 if (site.useProxy) {
                     if (SCRAPER_API_KEY) {
-                        // Ajout du paramètre render=true pour forcer l'exécution JS du côté du proxy (anti 403)
                         let extraParams = "&country_code=fr&render=true";
                         
                         if (site.nom === "KING JOUET") {
