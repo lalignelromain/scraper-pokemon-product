@@ -6,13 +6,9 @@ try {
 
 const { chromium } = require('playwright');
 const cheerio = require('cheerio');
-const fs = require('fs');
-const crypto = require('crypto');
 
 // Configuration
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
-const TIMING_FILE = 'timing_stats.json';
-const ETAT_STOCK_FILE = 'etat_stocks.json';
 
 // --- DIAGNOSTIC D'ENVIRONNEMENT ---
 console.log("=== VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT ===");
@@ -24,10 +20,6 @@ if (!NTFY_TOPIC) {
 console.log("==================================================\n");
 
 // Utilitaires
-function getHash(data) {
-    return crypto.createHash('md5').update(data).digest('hex');
-}
-
 function getRandomUserAgent() {
     const userAgents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -61,34 +53,30 @@ async function envoyerNotificationNtfy(nomSite, url) {
     }
 }
 
-// 💓 Notification HEARTBEAT (8h / 18h)
+// 💓 Notification HEARTBEAT optimisée pour GitHub Actions
 async function envoyerHeartbeatNtfy(etatStocks) {
     if (!NTFY_TOPIC) return;
 
     const now = new Date();
-    const heureFR = parseInt(new Intl.DateTimeFormat('fr-FR', {
+    const formatter = new Intl.DateTimeFormat('fr-FR', {
         timeZone: 'Europe/Paris',
         hour: 'numeric',
+        minute: 'numeric',
         hour12: false
-    }).format(now), 10);
+    });
+    
+    const parts = formatter.formatToParts(now);
+    const heureFR = parseInt(parts.find(p => p.type === 'hour').value, 10);
+    const minutesFR = parseInt(parts.find(p => p.type === 'minute').value, 10);
 
-    if (heureFR !== 8 && heureFR !== 18) {
+    // Déclenchement uniquement dans les 5 premières minutes des heures clés
+    const isScheduledReportHour = [8, 12, 18, 22].includes(heureFR) && minutesFR < 5;
+
+    if (!isScheduledReportHour) {
         return;
     }
 
-    const dateDuJour = now.toISOString().slice(0, 10);
-    const slotCle = `${dateDuJour}-${heureFR}h`;
-
-    let stats = {};
-    if (fs.existsSync(TIMING_FILE)) {
-        try { stats = JSON.parse(fs.readFileSync(TIMING_FILE, 'utf8')); } catch (e) {}
-    }
-
-    if (stats.dernierHeartbeatSlot === slotCle) {
-        return;
-    }
-
-    let message = "🤖 BILAN DES STOCKS (8h / 18h)\n\n";
+    let message = `🤖 BILAN DES STOCKS (${heureFR}h00)\n\n`;
     for (const site of SITES) {
         const enStock = etatStocks[site.nom];
         const statusStr = enStock ? "🟢 EN STOCK" : "🔴 Rupture";
@@ -108,142 +96,9 @@ async function envoyerHeartbeatNtfy(etatStocks) {
         };
         await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
         console.log(`[+] Notification Ntfy (Heartbeat ${heureFR}h) envoyée.`);
-
-        stats.dernierHeartbeatSlot = slotCle;
-        fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
     } catch (error) {
         console.error(`[-] Erreur Heartbeat Ntfy:`, error.message);
     }
-}
-
-// Enregistrement ultra-ciblé du DOM (Boutons d'achat uniquement)
-function enregistrerTimingEtDom(site, html) {
-    let stats = {};
-    if (fs.existsSync(TIMING_FILE)) {
-        try { 
-            stats = JSON.parse(fs.readFileSync(TIMING_FILE, 'utf8')); 
-        } catch (e) { 
-            stats = {}; 
-        }
-    }
-
-    const maintenant = new Date().toISOString();
-    const $ = cheerio.load(html);
-    
-    let texteCible = "";
-
-    if (site.nom === "KING JOUET") {
-        texteCible = $('.buy-box').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.add-to-cart').text();
-    } else if (site.nom === "E.LECLERC") {
-        texteCible = $('button[data-test="add-to-cart"]').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.btn-add-to-cart').text();
-    } else if (site.nom === "JOUECLUB") {
-        texteCible = $('.c-product-add-to-cart').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.product-actions').text();
-    } else if (site.nom === "SMYTHS TOYS") {
-        texteCible = $('#addToCartForm button[type="submit"]').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.js-add-to-cart-button').text();
-    } else if (site.nom === "CULTURA") {
-        texteCible = $('.add-to-cart').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.cart-button').text();
-    } else if (site.nom === "CARREFOUR") {
-        texteCible = $('.add-to-cart-button').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.pl-button').text();
-    } else if (site.nom === "AUCHAN") {
-        texteCible = $('.product-action__button').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.btn--primary').text();
-    } else if (site.nom === "MICROMANIA") {
-        texteCible = $('.add-to-cart').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.product-actions').text();
-    } else if (site.nom === "FNAC") {
-        texteCible = $('.f-buyBox-button').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.add-to-cart').text();
-    } else if (site.nom === "KAIRYU") {
-        texteCible = $('.product-form__submit').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.add-to-cart').text();
-    } else if (site.nom === "ULTRAJEUX") {
-        texteCible = $('.btn-panier').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.add-to-cart').text();
-    } else if (site.nom === "DESTOCKTCG") {
-        texteCible = $('.product-form__submit').text();
-        let estVide = false;
-        if (!texteCible) estVide = true;
-        else if (texteCible.trim() === "") estVide = true;
-        if (estVide) texteCible = $('.add-to-cart').text();
-    }
-
-    let fallbackVide = false;
-    if (!texteCible) fallbackVide = true;
-    else if (texteCible.trim() === "") fallbackVide = true;
-
-    if (fallbackVide) {
-        texteCible = $('title').text();
-    }
-
-    const cleanedText = texteCible.replace(/\s+/g, ' ').trim();
-    const currentHash = getHash(cleanedText);
-    
-    if (!stats[site.nom]) {
-        stats[site.nom] = {
-            dernierHash: currentHash,
-            derniereVerif: maintenant,
-            historiqueMisesAJour: []
-        };
-    } else {
-        if (stats[site.nom].dernierHash) {
-            if (stats[site.nom].dernierHash !== currentHash) {
-                console.log(`📌 [MAJ BOUTON DÉTECTÉE] ${site.nom} à ${maintenant}`);
-                stats[site.nom].historiqueMisesAJour.push({
-                    timestampLocal: maintenant,
-                    type: "CHANGEMENT_BOUTON"
-                });
-                stats[site.nom].dernierHash = currentHash;
-            }
-        }
-        stats[site.nom].derniereVerif = maintenant;
-    }
-
-    if (stats[site.nom].historiqueMisesAJour) {
-        if (stats[site.nom].historiqueMisesAJour.length > 50) {
-            stats[site.nom].historiqueMisesAJour = stats[site.nom].historiqueMisesAJour.slice(-50);
-        }
-    }
-
-    fs.writeFileSync(TIMING_FILE, JSON.stringify(stats, null, 2));
 }
 
 // Configuration des sites
@@ -662,14 +517,7 @@ const SITES = [
 
 // Logique principale
 async function verifierTousLesStocks() {
-    let etatStocks = {};
-    if (fs.existsSync(ETAT_STOCK_FILE)) {
-        try { 
-            etatStocks = JSON.parse(fs.readFileSync(ETAT_STOCK_FILE, 'utf8')); 
-        } catch (e) { 
-            etatStocks = {}; 
-        }
-    }
+    let etatStocks = {}; // Les données restent en mémoire uniquement le temps de l'exécution
 
     console.log("🚀 Démarrage du navigateur Playwright...");
     let browser = null;
@@ -704,8 +552,6 @@ async function verifierTousLesStocks() {
                 const html = await page.content();
                 await context.close();
                 
-                enregistrerTimingEtDom(site, html);
-
                 const estEnStock = site.verifier(html);
                 
                 let resultatText = '🔴 RUPTURE';
@@ -732,7 +578,6 @@ async function verifierTousLesStocks() {
 
     await browser.close();
 
-    fs.writeFileSync(ETAT_STOCK_FILE, JSON.stringify(etatStocks, null, 2));
     await envoyerHeartbeatNtfy(etatStocks);
     console.log("\n✅ Vérification terminée.");
 }
