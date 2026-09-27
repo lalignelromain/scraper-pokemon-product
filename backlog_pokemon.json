@@ -120,12 +120,58 @@
     "etatActuel": {}
   },
   "E.LECLERC": {
-    "historique": [],
-    "etatActuel": {}
+    "historique": [
+      {
+        "date": "27/09/2026 12:31:14",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:31:14",
+        "produit": "MINI_TIN_NUIT",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:31:14",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true,
+      "MINI_TIN_NUIT": true,
+      "MINI_TIN_JOUR": true
+    }
   },
   "AUCHAN": {
-    "historique": [],
-    "etatActuel": {}
+    "historique": [
+      {
+        "date": "27/09/2026 12:31:14",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:31:14",
+        "produit": "MINI_TIN_NUIT",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:31:14",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true,
+      "MINI_TIN_NUIT": true,
+      "MINI_TIN_JOUR": true
+    }
   },
   "CARREFOUR": {
     "historique": [],
