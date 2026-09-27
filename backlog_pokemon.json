@@ -56,11 +56,23 @@
         "produit": "MINI_TIN_JOUR",
         "statut": "APPARITION",
         "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "MINI_TIN_NUIT",
+        "statut": "DISPARITION",
+        "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "DISPARITION",
+        "methode": "N/A"
       }
     ],
     "etatActuel": {
-      "MINI_TIN_NUIT": true,
-      "MINI_TIN_JOUR": true
+      "MINI_TIN_NUIT": false,
+      "MINI_TIN_JOUR": false
     }
   },
   "FNAC": {
@@ -138,12 +150,30 @@
         "produit": "MINI_TIN_JOUR",
         "statut": "APPARITION",
         "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "ETB_30ANS",
+        "statut": "DISPARITION",
+        "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "MINI_TIN_NUIT",
+        "statut": "DISPARITION",
+        "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "DISPARITION",
+        "methode": "N/A"
       }
     ],
     "etatActuel": {
-      "ETB_30ANS": true,
-      "MINI_TIN_NUIT": true,
-      "MINI_TIN_JOUR": true
+      "ETB_30ANS": false,
+      "MINI_TIN_NUIT": false,
+      "MINI_TIN_JOUR": false
     }
   },
   "AUCHAN": {
@@ -165,12 +195,24 @@
         "produit": "MINI_TIN_JOUR",
         "statut": "APPARITION",
         "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "MINI_TIN_NUIT",
+        "statut": "DISPARITION",
+        "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 12:35:49",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "DISPARITION",
+        "methode": "N/A"
       }
     ],
     "etatActuel": {
       "ETB_30ANS": true,
-      "MINI_TIN_NUIT": true,
-      "MINI_TIN_JOUR": true
+      "MINI_TIN_NUIT": false,
+      "MINI_TIN_JOUR": false
     }
   },
   "CARREFOUR": {
