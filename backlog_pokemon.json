@@ -272,11 +272,17 @@
         "produit": "MINI_TIN_JOUR",
         "statut": "APPARITION",
         "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 18:21:29",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "DISPARITION",
+        "methode": "N/A"
       }
     ],
     "etatActuel": {
       "ETB_30ANS": true,
-      "MINI_TIN_JOUR": true
+      "MINI_TIN_JOUR": false
     }
   },
   "DESTOCKTCG": {
@@ -304,8 +310,17 @@
     "etatActuel": {}
   },
   "KING JOUET": {
-    "historique": [],
-    "etatActuel": {}
+    "historique": [
+      {
+        "date": "27/09/2026 18:21:29",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true
+    }
   },
   "CULTURA": {
     "historique": [],
