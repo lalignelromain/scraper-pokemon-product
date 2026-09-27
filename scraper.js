@@ -11,22 +11,22 @@ const fs = require('fs');
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const BACKLOG_FILE = 'backlog_pokemon.json';
 
-// Cibles avec la nouvelle logique de mots-clés stricts (Tous les mots du sous-tableau doivent être présents)
+// Cibles corrigées : "mini tin" en entier, et suppression de l'accent sur "30eme"
 const CIBLES = {
     "ETB_30ANS": { 
-        nom: "ETB 30ème Anniversaire", 
+        nom: "ETB 30eme Anniversaire", 
         ean: "0196214144835", 
         mots_cles_obligatoires: [ ["coffret", "dresseur", "30"], ["etb", "30"] ] 
     },
     "MINI_TIN_NUIT": { 
         nom: "Mini Tin NUIT (Mewtwo)", 
         ean: "0196214146655", 
-        mots_cles_obligatoires: [ ["tin", "nuit"], ["tin", "mewtwo"] ] 
+        mots_cles_obligatoires: [ ["mini tin", "nuit"], ["mini tin", "mewtwo"] ] 
     },
     "MINI_TIN_JOUR": { 
         nom: "Mini Tin JOUR (Mew)", 
         ean: "0196214146402", 
-        mots_cles_obligatoires: [ ["tin", "jour"], ["tin", "mew"] ] 
+        mots_cles_obligatoires: [ ["mini tin", "jour"], ["mini tin", "mew"] ] 
     }
 };
 
@@ -128,7 +128,6 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     }
 }
 
-// Configuration des sites (Sans UltraJeux)
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -166,6 +165,13 @@ const SITES = [
         url: "https://www.micromania.fr/recherche?q=pokemon+30+ans",
         verifier: (html) => {
             const $ = cheerio.load(html);
+            const texteBody = $('body').text().toLowerCase();
+            
+            // Protection anti-Gandalf
+            if (texteBody.includes("vous ne passerez pas")) return false;
+            if (texteBody.includes("introuvable")) return false;
+            if (texteBody.includes("aucun résultat")) return false;
+            
             const boutonAchat = $('.add-to-cart, .product-actions');
             if (boutonAchat.length === 0) return false;
             return true;
@@ -179,7 +185,11 @@ const SITES = [
             const zoneProduits = $('.ResultList-items, .articleList').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (!zoneProduits.includes("vendu par fnac") && !zoneProduits.includes("vendu et expédié par fnac")) return false;
+            if (!zoneProduits.includes("vendu par fnac")) {
+                if (!zoneProduits.includes("vendu et expédié par fnac")) {
+                    return false;
+                }
+            }
             
             const boutonAchat = $('.f-buyBox-button, .add-to-cart');
             if (boutonAchat.length === 0) return false;
@@ -197,6 +207,11 @@ const SITES = [
             if (["aucun résultat", "0 résultat", "en réassort", "épuisé", "sold out", "rupture"].some(kw => zoneProduits.includes(kw))) {
                 return false;
             }
+            
+            // On exige un vrai bouton d'ajout au panier Shopify
+            const boutonAchat = $('form[action="/cart/add"], button[name="add"]');
+            if (boutonAchat.length === 0) return false;
+            
             return true;
         }
     },
@@ -232,7 +247,11 @@ const SITES = [
             const zoneProduits = $('.search-result-items, .product-grid').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (zoneProduits.includes("vendu par") && !zoneProduits.includes("cultura")) return false;
+            if (zoneProduits.includes("vendu par")) {
+                if (!zoneProduits.includes("cultura")) {
+                    return false;
+                }
+            }
             
             const boutonAchat = $('.add-to-cart, .cart-button');
             if (boutonAchat.length === 0) return false;
@@ -246,7 +265,11 @@ const SITES = [
             const $ = cheerio.load(html);
             const content = html.toLowerCase();
             
-            if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
+            if (content.includes('vendu et expédié par')) {
+                if (!content.includes('e.leclerc')) {
+                    return false;
+                }
+            }
             if (content.includes('indisponible')) return false;
             if (content.includes('épuisé')) return false;
             
@@ -259,7 +282,10 @@ const SITES = [
             if (content.includes('retrait en magasin')) contientRetrait = true;
             if (content.includes('vendu par e.leclerc')) contientRetrait = true;
             
-            return contientAjout && contientRetrait;
+            if (!contientAjout) return false;
+            if (!contientRetrait) return false;
+            
+            return true;
         }
     },
     {
@@ -270,7 +296,11 @@ const SITES = [
             const zoneProduits = $('.search-results, .list__container').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (zoneProduits.includes("vendu par") && !zoneProduits.includes("auchan")) return false;
+            if (zoneProduits.includes("vendu par")) {
+                if (!zoneProduits.includes("auchan")) {
+                    return false;
+                }
+            }
 
             const boutonAchat = $('.product-action__button, .btn--primary');
             if (boutonAchat.length === 0) return false;
@@ -285,7 +315,11 @@ const SITES = [
             const zoneProduits = $('.product-grid, .search-results').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (zoneProduits.includes("vendu par") && !zoneProduits.includes("carrefour")) return false;
+            if (zoneProduits.includes("vendu par")) {
+                if (!zoneProduits.includes("carrefour")) {
+                    return false;
+                }
+            }
 
             const boutonAchat = $('.add-to-cart-button, .pl-button');
             if (boutonAchat.length === 0) return false;
@@ -341,6 +375,11 @@ async function verifierTousLesStocks() {
 
                 const html = await page.content();
                 const htmlLower = html.toLowerCase();
+                
+                // Extraction du texte pur pour éviter de lire le code caché
+                const $ = cheerio.load(html);
+                const texteVisible = $('body').text().toLowerCase();
+                
                 await context.close();
 
                 // === LE BOUCLIER ANTI-BOT ===
@@ -355,11 +394,11 @@ async function verifierTousLesStocks() {
 
                 if (botDetecte) {
                     console.log(`[!] Anti-bot ou blocage détecté sur ${site.nom}. Ignore pour ce tour.`);
-                    success = true; // On simule un succès pour ne pas retenter inutilement et se faire bannir
-                    continue; // On passe au site suivant
+                    success = true;
+                    continue;
                 }
                 
-                // === DÉTECTION INTELLIGENTE DES PRODUITS ===
+                // === DÉTECTION INTELLIGENTE SUR LE TEXTE VISIBLE ===
                 let produitsPresentsSurLaPage = [];
                 for (const [cleProduit, criteres] of Object.entries(CIBLES)) {
                     let detecte = false;
@@ -372,7 +411,8 @@ async function verifierTousLesStocks() {
                         for (const groupeMots of criteres.mots_cles_obligatoires) {
                             let groupeValide = true;
                             for (const mot of groupeMots) {
-                                if (!htmlLower.includes(mot)) {
+                                // On cherche uniquement dans le texte visible
+                                if (!texteVisible.includes(mot)) {
                                     groupeValide = false;
                                     break;
                                 }
@@ -389,7 +429,10 @@ async function verifierTousLesStocks() {
                         produitsPresentsSurLaPage.push(criteres.nom);
                     }
 
-                    const dernierEtat = backlog[site.nom].etatActuel[cleProduit] !== undefined ? backlog[site.nom].etatActuel[cleProduit] : false;
+                    let dernierEtat = false;
+                    if (backlog[site.nom].etatActuel[cleProduit] !== undefined) {
+                        dernierEtat = backlog[site.nom].etatActuel[cleProduit];
+                    }
 
                     if (detecte !== dernierEtat) {
                         unChangementBacklog = true;
@@ -417,7 +460,6 @@ async function verifierTousLesStocks() {
                 console.log(`[${site.nom}] Résultat Global : ${resultatText}`);
 
                 // === ALERTE SÉCURISÉE ===
-                // On n'alerte que si le bouton achat est actif ET qu'on a formellement reconnu le produit
                 if (estEnStock) {
                     if (produitsPresentsSurLaPage.length > 0) {
                         for (const prod of produitsPresentsSurLaPage) {
