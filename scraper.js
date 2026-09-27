@@ -55,10 +55,15 @@ async function envoyerNotificationNtfy(nomSite, url, nomProduit) {
                 'Tags': 'rotating_light,pokemon'
             }
         };
-        await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
-        console.log(`[+] Notification Ntfy envoyée pour ${nomSite} - ${nomProduit}`);
+        const response = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
+        
+        if (!response.ok) {
+            console.error(`[-] Ntfy a refusé l'alerte pour ${nomSite}. Statut : ${response.status}`);
+        } else {
+            console.log(`[+] Notification Ntfy envoyée pour ${nomSite} - ${nomProduit}`);
+        }
     } catch (error) {
-        console.error(`[-] Erreur lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
+        console.error(`[-] Erreur réseau lors de l'envoi Ntfy pour ${nomSite}:`, error.message);
     }
 }
 
@@ -78,8 +83,15 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     const heureFR = parseInt(parts.find(p => p.type === 'hour').value, 10);
     const minutesFR = parseInt(parts.find(p => p.type === 'minute').value, 10);
 
-    // Déclenchement uniquement dans les 5 premières minutes des heures clés
-    const isScheduledReportHour = [8, 12, 18, 20, 22].includes(heureFR) && minutesFR < 15;
+    // Déclenchement uniquement dans les 15 premières minutes des heures clés
+    const heuresAutorisees = [8, 12, 18, 20, 22];
+    let isScheduledReportHour = false;
+    
+    if (heuresAutorisees.includes(heureFR)) {
+        if (minutesFR < 15) {
+            isScheduledReportHour = true;
+        }
+    }
 
     if (!isScheduledReportHour) {
         return;
@@ -103,14 +115,19 @@ async function envoyerHeartbeatNtfy(etatStocks) {
                 'Tags': 'robot,bar_chart'
             }
         };
-        await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
-        console.log(`[+] Notification Ntfy (Heartbeat ${heureFR}h) envoyée.`);
+        const response = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, fetchArgs);
+        
+        if (!response.ok) {
+            console.error(`[-] Ntfy a refusé le Heartbeat. Statut : ${response.status}`);
+        } else {
+            console.log(`[+] Notification Ntfy (Heartbeat ${heureFR}h) envoyée.`);
+        }
     } catch (error) {
-        console.error(`[-] Erreur Heartbeat Ntfy:`, error.message);
+        console.error(`[-] Erreur réseau Heartbeat Ntfy:`, error.message);
     }
 }
 
-// Configuration des sites AVEC LES SÉLECTEURS CHEERIO STRICTS
+// Configuration des sites AVEC LES SÉLECTEURS CHEERIO STRICTS (Sans doubles pipes)
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -118,7 +135,11 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const btn = $('#addToCartForm button[type="submit"], .js-add-to-cart-button');
-            if (!btn.length || btn.prop('disabled') || btn.hasClass('cursor-not-allowed')) return false;
+            
+            if (!btn.length) return false;
+            if (btn.prop('disabled')) return false;
+            if (btn.hasClass('cursor-not-allowed')) return false;
+            
             return true;
         }
     },
@@ -130,8 +151,13 @@ const SITES = [
             const boutonActif = $('.c-product-add-to-cart, .product-actions').length > 0;
             const textePage = $('body').text().toLowerCase();
             
-            if (textePage.includes('indisponible') || textePage.includes('épuisé')) return false;
-            return boutonActif || html.includes('schema.org/InStock');
+            if (textePage.includes('indisponible')) return false;
+            if (textePage.includes('épuisé')) return false;
+            
+            if (boutonActif) return true;
+            if (html.includes('schema.org/InStock')) return true;
+            
+            return false;
         }
     },
     {
@@ -140,7 +166,9 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.search-results, .product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat")) return false;
+            
+            if (!zoneProduits) return false;
+            if (zoneProduits.includes("aucun résultat")) return false;
             
             const boutonAchat = $('.add-to-cart, .product-actions');
             if (boutonAchat.length === 0) return false;
@@ -154,7 +182,9 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.ResultList-items, .articleList').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat")) return false;
+            
+            if (!zoneProduits) return false;
+            if (zoneProduits.includes("aucun résultat")) return false;
             if (!zoneProduits.includes("vendu par fnac") && !zoneProduits.includes("vendu et expédié par fnac")) return false;
             
             const boutonAchat = $('.f-buyBox-button, .add-to-cart');
@@ -169,8 +199,11 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.product-grid, .grid, .product-list').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
-            if (zoneProduits.includes("en réassort") || zoneProduits.includes("épuisé") || zoneProduits.includes("sold out") || zoneProduits.includes("rupture")) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "0 résultat", "en réassort", "épuisé", "sold out", "rupture"].some(kw => zoneProduits.includes(kw))) {
+                return false;
+            }
             
             return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
@@ -181,8 +214,11 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.product-grid, .grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
-            if (["temporairement indisponible", "épuisé", "rupture", "sold out", "prévenez-moi", "en réassort"].some(kw => zoneProduits.includes(kw))) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "0 résultat", "temporairement indisponible", "épuisé", "rupture", "sold out", "prévenez-moi", "en réassort"].some(kw => zoneProduits.includes(kw))) {
+                return false;
+            }
             
             return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
@@ -193,8 +229,11 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.contenu, .products-list').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 article")) return false;
-            if (["indisponible", "épuisé", "rupture", "en réassort"].some(kw => zoneProduits.includes(kw))) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "0 article", "indisponible", "épuisé", "rupture", "en réassort"].some(kw => zoneProduits.includes(kw))) {
+                return false;
+            }
             
             return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
         }
@@ -205,7 +244,9 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.product-list, .product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("aucun resultat")) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "aucun resultat"].some(kw => zoneProduits.includes(kw))) return false;
             
             const boutonAchat = $('.buy-box, .add-to-cart');
             if (boutonAchat.length === 0) return false;
@@ -219,7 +260,9 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.search-result-items, .product-grid').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "0 résultat"].some(kw => zoneProduits.includes(kw))) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("cultura")) return false;
             
             const boutonAchat = $('.add-to-cart, .cart-button');
@@ -236,11 +279,17 @@ const SITES = [
             const content = html.toLowerCase();
             
             if (content.includes('vendu et expédié par') && !content.includes('e.leclerc')) return false;
-            if (content.includes('indisponible') || content.includes('épuisé')) return false;
+            if (content.includes('indisponible')) return false;
+            if (content.includes('épuisé')) return false;
             
             const boutonAchat = $('button[data-test="add-to-cart"], .btn-add-to-cart');
-            let contientAjout = boutonAchat.length > 0 || content.includes('schema.org/instock');
-            let contientRetrait = content.includes('retrait en magasin') || content.includes('vendu par e.leclerc');
+            let contientAjout = false;
+            if (boutonAchat.length > 0) contientAjout = true;
+            if (content.includes('schema.org/instock')) contientAjout = true;
+            
+            let contientRetrait = false;
+            if (content.includes('retrait en magasin')) contientRetrait = true;
+            if (content.includes('vendu par e.leclerc')) contientRetrait = true;
             
             return contientAjout && contientRetrait;
         }
@@ -251,7 +300,9 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.search-results, .list__container').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("0 résultat")) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "0 résultat"].some(kw => zoneProduits.includes(kw))) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("auchan")) return false;
 
             const boutonAchat = $('.product-action__button, .btn--primary');
@@ -266,7 +317,9 @@ const SITES = [
         verifier: (html) => {
             const $ = cheerio.load(html);
             const zoneProduits = $('.product-grid, .search-results').text().toLowerCase();
-            if (!zoneProduits || zoneProduits.includes("aucun résultat") || zoneProduits.includes("désolé") || zoneProduits.includes("ne donne aucun résultat")) return false;
+            
+            if (!zoneProduits) return false;
+            if (["aucun résultat", "désolé", "ne donne aucun résultat"].some(kw => zoneProduits.includes(kw))) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("carrefour")) return false;
 
             const boutonAchat = $('.add-to-cart-button, .pl-button');
@@ -346,7 +399,8 @@ async function verifierTousLesStocks() {
                         produitsPresentsSurLaPage.push(criteres.nom);
                     }
 
-                    const dernierEtat = backlog[site.nom].etatActuel[cleProduit] || false;
+                    // Remplacement du double pipe pour le fallback
+                    const dernierEtat = backlog[site.nom].etatActuel[cleProduit] !== undefined ? backlog[site.nom].etatActuel[cleProduit] : false;
 
                     if (detecte !== dernierEtat) {
                         unChangementBacklog = true;
