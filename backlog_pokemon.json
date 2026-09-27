@@ -1,7 +1,16 @@
 {
   "SMYTHS TOYS": {
-    "historique": [],
-    "etatActuel": {}
+    "historique": [
+      {
+        "date": "27/09/2026 04:05:53",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "EAN"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true
+    }
   },
   "JOUECLUB": {
     "historique": [
