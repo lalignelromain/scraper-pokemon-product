@@ -42,10 +42,16 @@
         "produit": "ETB_30ANS",
         "statut": "APPARITION",
         "methode": "EAN"
+      },
+      {
+        "date": "27/09/2026 14:16:00",
+        "produit": "ETB_30ANS",
+        "statut": "DISPARITION",
+        "methode": "N/A"
       }
     ],
     "etatActuel": {
-      "ETB_30ANS": true
+      "ETB_30ANS": false
     }
   },
   "JOUECLUB": {
@@ -152,11 +158,17 @@
         "produit": "MINI_TIN_JOUR",
         "statut": "DISPARITION",
         "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 14:16:00",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
       }
     ],
     "etatActuel": {
       "ETB_30ANS": true,
-      "MINI_TIN_JOUR": false
+      "MINI_TIN_JOUR": true
     }
   },
   "DESTOCKTCG": {
