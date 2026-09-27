@@ -12,10 +12,16 @@
         "produit": "ETB_30ANS",
         "statut": "DISPARITION",
         "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 06:20:59",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "EAN"
       }
     ],
     "etatActuel": {
-      "ETB_30ANS": false
+      "ETB_30ANS": true
     }
   },
   "JOUECLUB": {
