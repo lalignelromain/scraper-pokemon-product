@@ -44,16 +44,48 @@
     }
   },
   "MICROMANIA": {
-    "historique": [],
-    "etatActuel": {}
+    "historique": [
+      {
+        "date": "27/09/2026 12:25:51",
+        "produit": "MINI_TIN_NUIT",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:25:51",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      }
+    ],
+    "etatActuel": {
+      "MINI_TIN_NUIT": true,
+      "MINI_TIN_JOUR": true
+    }
   },
   "FNAC": {
     "historique": [],
     "etatActuel": {}
   },
   "KAIRYU": {
-    "historique": [],
-    "etatActuel": {}
+    "historique": [
+      {
+        "date": "27/09/2026 12:25:51",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "27/09/2026 12:25:51",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
+      }
+    ],
+    "etatActuel": {
+      "ETB_30ANS": true,
+      "MINI_TIN_JOUR": true
+    }
   },
   "DESTOCKTCG": {
     "historique": [
