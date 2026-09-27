@@ -302,11 +302,17 @@
         "produit": "MINI_TIN_JOUR",
         "statut": "DISPARITION",
         "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 19:16:01",
+        "produit": "MINI_TIN_JOUR",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
       }
     ],
     "etatActuel": {
       "ETB_30ANS": true,
-      "MINI_TIN_JOUR": false
+      "MINI_TIN_JOUR": true
     }
   },
   "DESTOCKTCG": {
