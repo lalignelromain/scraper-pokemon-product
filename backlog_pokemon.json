@@ -375,10 +375,16 @@
         "produit": "ETB_30ANS",
         "statut": "DISPARITION",
         "methode": "N/A"
+      },
+      {
+        "date": "27/09/2026 17:10:58",
+        "produit": "ETB_30ANS",
+        "statut": "APPARITION",
+        "methode": "Mots-clés stricts"
       }
     ],
     "etatActuel": {
-      "ETB_30ANS": false,
+      "ETB_30ANS": true,
       "MINI_TIN_NUIT": false,
       "MINI_TIN_JOUR": false
     }
