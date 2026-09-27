@@ -50,7 +50,7 @@ async function envoyerNotificationNtfy(nomSite, url, nomProduit) {
             method: 'POST',
             body: `🚨 ALERTE STOCK 🚨\nLe produit [ ${nomProduit} ] est EN STOCK sur ${nomSite} !\nLien : ${url}`,
             headers: {
-                'Title': `Pokémon 30e : ${nomProduit} !`,
+                'Title': `Pokemon 30e : ${nomProduit} !`,
                 'Priority': 'urgent',
                 'Tags': 'rotating_light,pokemon'
             }
@@ -110,7 +110,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
             method: 'POST',
             body: message,
             headers: {
-                'Title': `💓 Heartbeat (${heureFR}h00)`,
+                'Title': `Heartbeat (${heureFR}h00)`,
                 'Priority': 'low',
                 'Tags': 'robot,bar_chart'
             }
