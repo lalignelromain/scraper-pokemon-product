@@ -8,18 +8,28 @@ const { chromium } = require('playwright');
 const cheerio = require('cheerio');
 const fs = require('fs');
 
-// Configuration
 const NTFY_TOPIC = process.env.NTFY_TOPIC;
 const BACKLOG_FILE = 'backlog_pokemon.json';
 
-// Cibles de surveillance enrichies pour dissocier les alertes Ntfy
+// Cibles avec la nouvelle logique de mots-clés stricts (Tous les mots du sous-tableau doivent être présents)
 const CIBLES = {
-    "ETB_30ANS": { nom: "ETB 30ème Anniversaire", ean: "0196214144835", keywords: ["coffret dresseur d'élite", "etb 30"] },
-    "MINI_TIN_NUIT": { nom: "Mini Tin NUIT (Mewtwo)", ean: "0196214146655", keywords: ["nuit mewtwo", "mini tin nuit"] },
-    "MINI_TIN_JOUR": { nom: "Mini Tin JOUR (Mew)", ean: "0196214146402", keywords: ["jour mew", "mini tin jour"] }
+    "ETB_30ANS": { 
+        nom: "ETB 30ème Anniversaire", 
+        ean: "0196214144835", 
+        mots_cles_obligatoires: [ ["coffret", "dresseur", "30"], ["etb", "30"] ] 
+    },
+    "MINI_TIN_NUIT": { 
+        nom: "Mini Tin NUIT (Mewtwo)", 
+        ean: "0196214146655", 
+        mots_cles_obligatoires: [ ["tin", "nuit"], ["tin", "mewtwo"] ] 
+    },
+    "MINI_TIN_JOUR": { 
+        nom: "Mini Tin JOUR (Mew)", 
+        ean: "0196214146402", 
+        mots_cles_obligatoires: [ ["tin", "jour"], ["tin", "mew"] ] 
+    }
 };
 
-// --- DIAGNOSTIC D'ENVIRONNEMENT ---
 console.log("=== VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT ===");
 if (!NTFY_TOPIC) {
     console.log("⚠️  ATTENTION : NTFY_TOPIC est indéfini ! Les notifications ne partiront pas.");
@@ -28,7 +38,6 @@ if (!NTFY_TOPIC) {
 }
 console.log("==================================================\n");
 
-// Utilitaires
 function getRandomUserAgent() {
     const userAgents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
@@ -38,12 +47,8 @@ function getRandomUserAgent() {
     return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 
-// 🚨 Notification URGENTE (Spécifique par produit)
 async function envoyerNotificationNtfy(nomSite, url, nomProduit) {
-    if (!NTFY_TOPIC) {
-        console.log(`[!] Notification ignorée : NTFY_TOPIC non défini.`);
-        return;
-    }
+    if (!NTFY_TOPIC) return;
 
     try {
         const fetchArgs = {
@@ -67,7 +72,6 @@ async function envoyerNotificationNtfy(nomSite, url, nomProduit) {
     }
 }
 
-// 💓 Notification HEARTBEAT optimisée pour GitHub Actions
 async function envoyerHeartbeatNtfy(etatStocks) {
     if (!NTFY_TOPIC) return;
 
@@ -83,19 +87,16 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     const heureFR = parseInt(parts.find(p => p.type === 'hour').value, 10);
     const minutesFR = parseInt(parts.find(p => p.type === 'minute').value, 10);
 
-    // Déclenchement uniquement dans les 15 premières minutes des heures clés
     const heuresAutorisees = [8, 12, 18, 20, 22];
     let isScheduledReportHour = false;
     
     if (heuresAutorisees.includes(heureFR)) {
-        if (minutesFR < 15) {
+        if (minutesFR < 5) {
             isScheduledReportHour = true;
         }
     }
 
-    if (!isScheduledReportHour) {
-        return;
-    }
+    if (!isScheduledReportHour) return;
 
     let message = `🤖 BILAN DES STOCKS (${heureFR}h00)\n\n`;
     for (const site of SITES) {
@@ -127,7 +128,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     }
 }
 
-// Configuration des sites AVEC LES SÉLECTEURS CHEERIO STRICTS (Sans doubles pipes)
+// Configuration des sites (Sans UltraJeux)
 const SITES = [
     {
         nom: "SMYTHS TOYS",
@@ -165,15 +166,9 @@ const SITES = [
         url: "https://www.micromania.fr/recherche?q=pokemon+30+ans",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            const zoneProduits = $('.search-results, .product-grid').text().toLowerCase();
-            
-            if (!zoneProduits) return false;
-            if (zoneProduits.includes("aucun résultat")) return false;
-            
             const boutonAchat = $('.add-to-cart, .product-actions');
             if (boutonAchat.length === 0) return false;
-
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -184,13 +179,11 @@ const SITES = [
             const zoneProduits = $('.ResultList-items, .articleList').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (zoneProduits.includes("aucun résultat")) return false;
             if (!zoneProduits.includes("vendu par fnac") && !zoneProduits.includes("vendu et expédié par fnac")) return false;
             
             const boutonAchat = $('.f-buyBox-button, .add-to-cart');
             if (boutonAchat.length === 0) return false;
-
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -204,8 +197,7 @@ const SITES = [
             if (["aucun résultat", "0 résultat", "en réassort", "épuisé", "sold out", "rupture"].some(kw => zoneProduits.includes(kw))) {
                 return false;
             }
-            
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -219,23 +211,7 @@ const SITES = [
             if (["aucun résultat", "0 résultat", "temporairement indisponible", "épuisé", "rupture", "sold out", "prévenez-moi", "en réassort"].some(kw => zoneProduits.includes(kw))) {
                 return false;
             }
-            
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
-        }
-    },
-    {
-        nom: "ULTRAJEUX",
-        url: "https://www.ultrajeux.com/search.php?search=pokemon+30",
-        verifier: (html) => {
-            const $ = cheerio.load(html);
-            const zoneProduits = $('.contenu, .products-list').text().toLowerCase();
-            
-            if (!zoneProduits) return false;
-            if (["aucun résultat", "0 article", "indisponible", "épuisé", "rupture", "en réassort"].some(kw => zoneProduits.includes(kw))) {
-                return false;
-            }
-            
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -243,15 +219,9 @@ const SITES = [
         url: "https://www.king-jouet.com/jeux-jouets/coffrets-dresseur-pokemon/page1.htm",
         verifier: (html) => {
             const $ = cheerio.load(html);
-            const zoneProduits = $('.product-list, .product-grid').text().toLowerCase();
-            
-            if (!zoneProduits) return false;
-            if (["aucun résultat", "aucun resultat"].some(kw => zoneProduits.includes(kw))) return false;
-            
             const boutonAchat = $('.buy-box, .add-to-cart');
             if (boutonAchat.length === 0) return false;
-
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -262,13 +232,11 @@ const SITES = [
             const zoneProduits = $('.search-result-items, .product-grid').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (["aucun résultat", "0 résultat"].some(kw => zoneProduits.includes(kw))) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("cultura")) return false;
             
             const boutonAchat = $('.add-to-cart, .cart-button');
             if (boutonAchat.length === 0) return false;
-
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -302,13 +270,11 @@ const SITES = [
             const zoneProduits = $('.search-results, .list__container').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (["aucun résultat", "0 résultat"].some(kw => zoneProduits.includes(kw))) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("auchan")) return false;
 
             const boutonAchat = $('.product-action__button, .btn--primary');
             if (boutonAchat.length === 0) return false;
-
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     },
     {
@@ -319,24 +285,20 @@ const SITES = [
             const zoneProduits = $('.product-grid, .search-results').text().toLowerCase();
             
             if (!zoneProduits) return false;
-            if (["aucun résultat", "désolé", "ne donne aucun résultat"].some(kw => zoneProduits.includes(kw))) return false;
             if (zoneProduits.includes("vendu par") && !zoneProduits.includes("carrefour")) return false;
 
             const boutonAchat = $('.add-to-cart-button, .pl-button');
             if (boutonAchat.length === 0) return false;
-
-            return ["célébration", "30 ans", "anniversaire", "celebrations"].some(kw => zoneProduits.includes(kw));
+            return true;
         }
     }
 ];
 
-// Logique principale
 async function verifierTousLesStocks() {
     let etatStocks = {}; 
     let backlog = {};
     let unChangementBacklog = false;
 
-    // Chargement du backlog existant
     if (fs.existsSync(BACKLOG_FILE)) {
         try { backlog = JSON.parse(fs.readFileSync(BACKLOG_FILE, 'utf8')); } 
         catch (e) { backlog = {}; }
@@ -380,8 +342,24 @@ async function verifierTousLesStocks() {
                 const html = await page.content();
                 const htmlLower = html.toLowerCase();
                 await context.close();
+
+                // === LE BOUCLIER ANTI-BOT ===
+                const motsAntiBot = ["cloudflare", "access denied", "prouver que vous êtes humain", "verify you are human", "checking your browser"];
+                let botDetecte = false;
+                for (const mot of motsAntiBot) {
+                    if (htmlLower.includes(mot)) {
+                        botDetecte = true;
+                        break;
+                    }
+                }
+
+                if (botDetecte) {
+                    console.log(`[!] Anti-bot ou blocage détecté sur ${site.nom}. Ignore pour ce tour.`);
+                    success = true; // On simule un succès pour ne pas retenter inutilement et se faire bannir
+                    continue; // On passe au site suivant
+                }
                 
-                // === ÉTAPE 1 : SCRUTATION DU BACKLOG (EAN & Mots-Clés) ===
+                // === DÉTECTION INTELLIGENTE DES PRODUITS ===
                 let produitsPresentsSurLaPage = [];
                 for (const [cleProduit, criteres] of Object.entries(CIBLES)) {
                     let detecte = false;
@@ -390,16 +368,27 @@ async function verifierTousLesStocks() {
                     if (html.includes(criteres.ean)) {
                         detecte = true;
                         methode = "EAN";
-                    } else if (criteres.keywords.some(kw => htmlLower.includes(kw))) {
-                        detecte = true;
-                        methode = "Mots-clés";
+                    } else {
+                        for (const groupeMots of criteres.mots_cles_obligatoires) {
+                            let groupeValide = true;
+                            for (const mot of groupeMots) {
+                                if (!htmlLower.includes(mot)) {
+                                    groupeValide = false;
+                                    break;
+                                }
+                            }
+                            if (groupeValide) {
+                                detecte = true;
+                                methode = "Mots-clés stricts";
+                                break;
+                            }
+                        }
                     }
 
                     if (detecte) {
                         produitsPresentsSurLaPage.push(criteres.nom);
                     }
 
-                    // Remplacement du double pipe pour le fallback
                     const dernierEtat = backlog[site.nom].etatActuel[cleProduit] !== undefined ? backlog[site.nom].etatActuel[cleProduit] : false;
 
                     if (detecte !== dernierEtat) {
@@ -418,24 +407,24 @@ async function verifierTousLesStocks() {
                     }
                 }
 
-                // === ÉTAPE 2 : VÉRIFICATION TRADITIONNELLE DU STOCK ===
+                // === VÉRIFICATION DU BOUTON ACHAT ===
                 const estEnStock = site.verifier(html);
                 
                 let resultatText = '🔴 RUPTURE';
                 if (estEnStock) {
-                    resultatText = '🟢 EN STOCK';
+                    resultatText = '🟢 EN STOCK (Bouton actif)';
                 }
                 console.log(`[${site.nom}] Résultat Global : ${resultatText}`);
 
+                // === ALERTE SÉCURISÉE ===
+                // On n'alerte que si le bouton achat est actif ET qu'on a formellement reconnu le produit
                 if (estEnStock) {
-                    // Envoi d'alertes Ntfy distinctes selon les produits détectés
                     if (produitsPresentsSurLaPage.length > 0) {
                         for (const prod of produitsPresentsSurLaPage) {
                             await envoyerNotificationNtfy(site.nom, site.url, prod);
                         }
                     } else {
-                        // Cas de secours si le vérificateur valide mais que les EANs stricts n'ont pas matché
-                        await envoyerNotificationNtfy(site.nom, site.url, "Produit 30ème Anniversaire générique");
+                        console.log(`[!] Fausse alerte évitée sur ${site.nom} : Bouton achat présent mais aucun produit cible reconnu.`);
                     }
                 }
 
@@ -453,7 +442,6 @@ async function verifierTousLesStocks() {
 
     await browser.close();
 
-    // === ÉTAPE 3 : SAUVEGARDE DU BACKLOG SEULEMENT SI MODIFICATION ===
     if (unChangementBacklog) {
         fs.writeFileSync(BACKLOG_FILE, JSON.stringify(backlog, null, 2));
         console.log("💾 Fichier backlog_pokemon.json mis à jour localement.");
