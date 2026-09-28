@@ -325,6 +325,31 @@ const SITES = [
             if (boutonAchat.length === 0) return false;
             return true;
         }
+    },
+    {
+        nom: "VCOLLECT (ETB FR)",
+        url: "https://vcollect.fr/products/coffret-dresseur-delite-30e-anniversaire-francais",
+        verifier: (html) => {
+            const $ = cheerio.load(html);
+            const texteVisible = $('body').text().toLowerCase();
+            
+            // 1. Sécurité absolue sur la langue
+            if (!texteVisible.includes("français")) {
+                return false;
+            }
+
+            // 2. Détection des marqueurs de rupture vus sur la vidéo
+            if (texteVisible.includes("épuisé")) return false;
+            if (texteVisible.includes("me prévenir de retour en stock")) return false;
+            if (texteVisible.includes("bientôt disponible")) return false;
+            
+            // 3. Bouton d'achat strict Shopify (On ignore les "+ Ajouter" des suggestions)
+            const boutonAchat = $('form[action^="/cart/add"] button, button[name="add"]');
+            if (boutonAchat.length === 0) return false;
+            if (boutonAchat.prop('disabled')) return false;
+
+            return true;
+        }
     }
 ];
 
