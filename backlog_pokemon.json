@@ -604,10 +604,16 @@
         "produit": "ETB_30ANS",
         "statut": "APPARITION",
         "methode": "Mots-clés stricts"
+      },
+      {
+        "date": "28/09/2026 05:25:51",
+        "produit": "ETB_30ANS",
+        "statut": "DISPARITION",
+        "methode": "N/A"
       }
     ],
     "etatActuel": {
-      "ETB_30ANS": true
+      "ETB_30ANS": false
     }
   },
   "CULTURA": {
