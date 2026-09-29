@@ -378,8 +378,10 @@ async function verifierTousLesStocks() {
         console.log(`\n⏳ Vérification en cours pour : ${site.nom}`);
         let success = false;
 
-        if (!backlog[site.nom]) {
-            backlog[site.nom] = { historique: [], etatActuel: {} };
+        // Initialisation propre ou migration de l'ancien format vers le nouveau (1 ligne par produit)
+        if (!backlog[site.nom] || backlog[site.nom].historique) {
+            backlog[site.nom] = {}; 
+            unChangementBacklog = true;
         }
 
         for (let tentative = 1; tentative <= 2; tentative++) {
@@ -426,6 +428,20 @@ async function verifierTousLesStocks() {
                 // === DÉTECTION INTELLIGENTE SUR LE TEXTE VISIBLE ===
                 let produitsPresentsSurLaPage = [];
                 for (const [cleProduit, criteres] of Object.entries(CIBLES)) {
+                    
+                    // Si la catégorie du produit n'existe pas encore pour cette enseigne, on l'initialise
+                    if (!backlog[site.nom][cleProduit]) {
+                        backlog[site.nom][cleProduit] = {
+                            etat_actuel: false,
+                            statut: "🔴 RUPTURE",
+                            derniere_modification: "N/A",
+                            compteur_apparitions: 0,
+                            derniere_apparition: "N/A",
+                            derniere_disparition: "N/A"
+                        };
+                        unChangementBacklog = true;
+                    }
+
                     let detecte = false;
                     let methode = "";
 
@@ -454,24 +470,25 @@ async function verifierTousLesStocks() {
                         produitsPresentsSurLaPage.push(criteres.nom);
                     }
 
-                    let dernierEtat = false;
-                    if (backlog[site.nom].etatActuel[cleProduit] !== undefined) {
-                        dernierEtat = backlog[site.nom].etatActuel[cleProduit];
-                    }
+                    // Récupération du dernier état connu
+                    let dernierEtat = backlog[site.nom][cleProduit].etat_actuel;
 
+                    // SI CHANGEMENT D'ÉTAT DÉTECTÉ (Apparition ou Disparition)
                     if (detecte !== dernierEtat) {
                         unChangementBacklog = true;
-                        backlog[site.nom].etatActuel[cleProduit] = detecte;
                         
-                        const evenement = {
-                            date: maintenant,
-                            produit: cleProduit,
-                            statut: detecte ? "APPARITION" : "DISPARITION",
-                            methode: detecte ? methode : "N/A"
-                        };
+                        backlog[site.nom][cleProduit].etat_actuel = detecte;
+                        backlog[site.nom][cleProduit].statut = detecte ? "🟢 EN LIGNE" : "🔴 RUPTURE";
+                        backlog[site.nom][cleProduit].derniere_modification = maintenant;
                         
-                        backlog[site.nom].historique.push(evenement);
-                        console.log(`📝 [BACKLOG] NOUVEL ÉVÉNEMENT : ${site.nom} - ${cleProduit} -> ${evenement.statut}`);
+                        if (detecte) {
+                            backlog[site.nom][cleProduit].compteur_apparitions += 1;
+                            backlog[site.nom][cleProduit].derniere_apparition = maintenant;
+                        } else {
+                            backlog[site.nom][cleProduit].derniere_disparition = maintenant;
+                        }
+                        
+                        console.log(`📝 [BACKLOG] RADAR : ${site.nom} - ${cleProduit} -> ${detecte ? "🟢 APPARITION" : "🔴 DISPARITION"}`);
                     }
                 }
 
@@ -511,7 +528,7 @@ async function verifierTousLesStocks() {
 
     if (unChangementBacklog) {
         fs.writeFileSync(BACKLOG_FILE, JSON.stringify(backlog, null, 2));
-        console.log("💾 Fichier backlog_pokemon.json mis à jour localement.");
+        console.log("💾 Fichier backlog_pokemon.json mis à jour (Mouchard actif).");
     }
 
     await envoyerHeartbeatNtfy(etatStocks);
