@@ -29,7 +29,7 @@ Le script priorise les plateformes spécialisées (plus véloces) avant d'attaqu
 4. **Fnac** (Exclusion stricte des vendeurs Marketplace)
 5. **Kairyu** (Filtre Shopify anti-réassort/épuisé)
 6. **DestockTCG** (Filtre Shopify sur la grille de produits)
-7. **Ultrajeux** (Filtre sur le catalogue)
+7. **Vcollect** (Validation stricte anti-faux positifs)
 8. **King Jouet** (Exclusion des menus de navigation parasites)
 9. **Cultura** (Filtre vendeur officiel)
 10. **E.Leclerc** (Analyse du JSON-LD et du vendeur officiel)
@@ -45,6 +45,7 @@ Le script priorise les plateformes spécialisées (plus véloces) avant d'attaqu
 │  cron-job.org   │ ────>  │  GitHub Actions API  │ ────>  │ Playwright (JS) │ ────>  │   ntfy.sh API   │
 │ (Trigger / 5m)  │        │ (Runner Ubuntu Cloud)│        │(Headless Chrome)│        │  (Push Mobile)  │
 └─────────────────┘        └──────────────────────┘        └─────────────────┘        └─────────────────┘
+
 
 ```
 
@@ -123,4 +124,11 @@ npx playwright install --with-deps chromium
 # 5. Lancer une vérification manuelle
 node scraper.js
 
+
 ```
+
+---
+
+## 🚧 Roadmap & Améliorations futures
+
+* **Refactoring du code :** Une restructuration du code est prévue prochainement pour optimiser la logique, modulariser les fonctions de scraping et faciliter l'ajout de nouveaux sites marchands.
