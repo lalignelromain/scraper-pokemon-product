@@ -3,7 +3,7 @@ name: Pokemon Scraper & Backlog
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/15 * * * *'
 
 permissions:
   contents: write
@@ -31,14 +31,16 @@ jobs:
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
 
-      - name: 💾 Sauvegarde du Backlog Infini
+      - name: 💾 Sauvegarde du Backlog (Sécurisée)
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add -f backlog_pokemon.json
+          
           if git diff-index --quiet HEAD; then
             echo "Aucun changement détecté, pas de commit"
           else
             git commit -m "📝 Maj Backlog : Nouveaux événements détectés"
+            git pull --rebase
+            git push
           fi
-          git push
