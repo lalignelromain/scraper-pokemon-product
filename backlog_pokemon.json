@@ -96,12 +96,12 @@
       "derniere_disparition": "N/A"
     },
     "MINI_TIN_JOUR": {
-      "etat_actuel": true,
-      "statut": "🟢 EN LIGNE",
-      "derniere_modification": "30/09/2026 21:16:01",
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "30/09/2026 22:01:22",
       "compteur_apparitions": 8,
       "derniere_apparition": "30/09/2026 21:16:01",
-      "derniere_disparition": "30/09/2026 20:01:19"
+      "derniere_disparition": "30/09/2026 22:01:22"
     }
   },
   "DESTOCKTCG": {},
