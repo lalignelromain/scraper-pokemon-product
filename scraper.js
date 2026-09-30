@@ -87,7 +87,7 @@ async function envoyerHeartbeatNtfy(etatStocks) {
     const heureFR = parseInt(parts.find(p => p.type === 'hour').value, 10);
     const minutesFR = parseInt(parts.find(p => p.type === 'minute').value, 10);
 
-    const heuresAutorisees = [8, 12, 18, 20, 22];
+    const heuresAutorisees = [8, 16, 22];
     let isScheduledReportHour = false;
     
     if (heuresAutorisees.includes(heureFR)) {
