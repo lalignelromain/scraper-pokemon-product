@@ -96,12 +96,12 @@
       "derniere_disparition": "N/A"
     },
     "MINI_TIN_JOUR": {
-      "etat_actuel": true,
-      "statut": "🟢 EN LIGNE",
-      "derniere_modification": "01/10/2026 17:31:13",
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "01/10/2026 17:38:46",
       "compteur_apparitions": 25,
       "derniere_apparition": "01/10/2026 17:31:13",
-      "derniere_disparition": "01/10/2026 16:56:49"
+      "derniere_disparition": "01/10/2026 17:38:46"
     }
   },
   "DESTOCKTCG": {},
@@ -160,11 +160,11 @@
   },
   "AUCHAN": {
     "ETB_30ANS": {
-      "etat_actuel": false,
-      "statut": "🔴 RUPTURE",
-      "derniere_modification": "01/10/2026 17:31:13",
-      "compteur_apparitions": 4,
-      "derniere_apparition": "01/10/2026 17:05:47",
+      "etat_actuel": true,
+      "statut": "🟢 EN LIGNE",
+      "derniere_modification": "01/10/2026 17:38:46",
+      "compteur_apparitions": 5,
+      "derniere_apparition": "01/10/2026 17:38:46",
       "derniere_disparition": "01/10/2026 17:31:13"
     },
     "MINI_TIN_NUIT": {
