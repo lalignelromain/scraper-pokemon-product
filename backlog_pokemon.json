@@ -96,11 +96,11 @@
       "derniere_disparition": "N/A"
     },
     "MINI_TIN_JOUR": {
-      "etat_actuel": false,
-      "statut": "🔴 RUPTURE",
-      "derniere_modification": "01/10/2026 05:31:07",
-      "compteur_apparitions": 13,
-      "derniere_apparition": "01/10/2026 05:15:45",
+      "etat_actuel": true,
+      "statut": "🟢 EN LIGNE",
+      "derniere_modification": "01/10/2026 06:01:14",
+      "compteur_apparitions": 14,
+      "derniere_apparition": "01/10/2026 06:01:14",
       "derniere_disparition": "01/10/2026 05:31:07"
     }
   },
