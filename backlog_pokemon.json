@@ -132,12 +132,12 @@
   "DESTOCKTCG": {},
   "KING JOUET": {
     "ETB_30ANS": {
-      "etat_actuel": true,
-      "statut": "🟢 EN LIGNE",
-      "derniere_modification": "02/10/2026 12:05:45",
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "02/10/2026 12:10:54",
       "compteur_apparitions": 24,
       "derniere_apparition": "02/10/2026 12:05:45",
-      "derniere_disparition": "02/10/2026 11:50:50"
+      "derniere_disparition": "02/10/2026 12:10:54"
     },
     "MINI_TIN_NUIT": {
       "etat_actuel": false,
