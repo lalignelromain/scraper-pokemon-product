@@ -185,12 +185,12 @@
   },
   "AUCHAN": {
     "ETB_30ANS": {
-      "etat_actuel": true,
-      "statut": "🟢 EN LIGNE",
-      "derniere_modification": "01/10/2026 21:49:44",
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "02/10/2026 14:01:26",
       "compteur_apparitions": 7,
       "derniere_apparition": "01/10/2026 21:49:44",
-      "derniere_disparition": "01/10/2026 21:41:10"
+      "derniere_disparition": "02/10/2026 14:01:26"
     },
     "MINI_TIN_NUIT": {
       "etat_actuel": false,
