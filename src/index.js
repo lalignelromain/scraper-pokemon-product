@@ -6,14 +6,10 @@ const logger = require('./utils/logger');
 const { CAMPAIGNS, ANTI_BOT_KEYWORDS } = require('./config/constants');
 const { MERCHANTS } = require('./sites');
 const browserService = require('./services/browser');
-const backlogService = require('./services/backlog');
 const notifierService = require('./services/notifier');
 
 const checkAllInventory = async () => {
-    let backlog = backlogService.loadBacklog();
-    let hasBacklogChanged = false;
     let inventoryStatus = {}; 
-    const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
 
     logger.system(`Starting Playwright browser engine...`);
     const browser = await browserService.launchBrowser();
@@ -33,18 +29,6 @@ const checkAllInventory = async () => {
         if (activeCampaigns.length === 0) continue;
 
         logger.system(`=== Store: ${merchant.name} (Type: ${merchant.type}) ===`);
-
-        let shouldInitBacklog = false;
-        if (!backlog[merchant.name]) {
-            shouldInitBacklog = true;
-        } else if (backlog[merchant.name].historique) {
-            shouldInitBacklog = true;
-        }
-
-        if (shouldInitBacklog) {
-            backlog[merchant.name] = {}; 
-            hasBacklogChanged = true;
-        }
 
         for (const campaign of activeCampaigns) {
             const { key: campaignKey, data: campaignData } = campaign;
@@ -80,14 +64,6 @@ const checkAllInventory = async () => {
                     let productsFoundOnPage = [];
 
                     for (const [productKey, targetObj] of Object.entries(campaignData.products)) {
-                        if (!backlog[merchant.name][productKey]) {
-                            backlog[merchant.name][productKey] = {
-                                etat_actuel: false, statut: "🔴 RUPTURE", derniere_modification: "N/A",
-                                compteur_apparitions: 0, derniere_apparition: "N/A", derniere_disparition: "N/A"
-                            };
-                            hasBacklogChanged = true;
-                        }
-
                         let isDetected = false;
                         if (html.includes(targetObj.ean)) {
                             isDetected = true;
@@ -100,7 +76,6 @@ const checkAllInventory = async () => {
                         // === PRECISE EXCLUSION FILTER ===
                         if (isDetected) {
                             if (targetObj.excluded_keywords) {
-                                // On vérifie si une phrase d'exclusion entière est présente, pas un simple mot isolé
                                 const matchExclusion = targetObj.excluded_keywords.some(phrase => visibleText.includes(phrase));
                                 if (matchExclusion) {
                                     logger.warn(`[FILTER] Product ${productKey} ignored (Strict exclusion keyword matched).`);
@@ -109,24 +84,9 @@ const checkAllInventory = async () => {
                             }
                         }
 
-                        if (isDetected) productsFoundOnPage.push(targetObj.name);
-
-                        // === BACKLOG MANAGEMENT ===
-                        const lastState = backlog[merchant.name][productKey].etat_actuel;
-                        if (isDetected !== lastState) {
-                            hasBacklogChanged = true;
-                            backlog[merchant.name][productKey].etat_actuel = isDetected;
-                            backlog[merchant.name][productKey].statut = isDetected ? "🟢 EN LIGNE" : "🔴 RUPTURE";
-                            backlog[merchant.name][productKey].derniere_modification = now;
-                            
-                            if (isDetected) {
-                                backlog[merchant.name][productKey].compteur_apparitions += 1;
-                                backlog[merchant.name][productKey].derniere_apparition = now;
-                                logger.info(`[RADAR] ${merchant.name} - ${productKey} -> 🟢 APPEARED`);
-                            } else {
-                                backlog[merchant.name][productKey].derniere_disparition = now;
-                                logger.info(`[RADAR] ${merchant.name} - ${productKey} -> 🔴 DISAPPEARED`);
-                            }
+                        if (isDetected) {
+                            productsFoundOnPage.push(targetObj.name);
+                            logger.info(`[RADAR] ${merchant.name} - ${productKey} -> 🟢 DETECTED ON PAGE`);
                         }
                     }
 
@@ -159,7 +119,6 @@ const checkAllInventory = async () => {
     }
 
     await browser.close();
-    if (hasBacklogChanged) backlogService.saveBacklog(backlog);
     await notifierService.sendHeartbeat(inventoryStatus);
     logger.success("Verification cycle complete.\n");
 };
