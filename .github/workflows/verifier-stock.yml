@@ -1,21 +1,21 @@
-name: Pokemon Scraper & Backlog
+name: Pokemon TCG Scraper
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
-
-permissions:
-  contents: write
+    - cron: '0 */2 * * *'
 
 jobs:
-  run-scraper:
+  scrape:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Récupération du code
         uses: actions/checkout@v4
 
-      - name: ⬡ Installation de Node.js
+      - name: ⚙️️ Configuration de Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -29,18 +29,21 @@ jobs:
       - name: 🚀 Lancement du Scraper
         run: node src/index.js
         env:
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_TOPIC_30ANS: ${{ secrets.NTFY_TOPIC_30ANS }}
+          NTFY_TOPIC_ETB: ${{ secrets.NTFY_TOPIC_ETB }}
+          NTFY_TOPIC_COFFRET: ${{ secrets.NTFY_TOPIC_COFFRET }}
+          NTFY_TOPIC_BUNDLE_BLISTER: ${{ secrets.NTFY_TOPIC_BUNDLE_BLISTER }}
+          NTFY_TOPIC_CARTE: ${{ secrets.NTFY_TOPIC_CARTE }}
 
-      - name: 💾 Sauvegarde du Backlog (Sécurisée)
+      - name: 💾 Sauvegarde du Backlog
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f backlog_pokemon.json
-          
-          if git diff-index --quiet HEAD; then
-            echo "Aucun changement détecté, pas de commit"
-          else
-            git commit -m "📝 Maj Backlog : Nouveaux événements détectés"
-            git pull --rebase
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git add backlog_pokemon.json
+          git diff --staged --quiet
+          if [ $? -ne 0 ]; then
+            git commit -m "chore(data): update backlog state"
             git push
+          else
+            echo "Aucun changement dans le backlog a sauvegarder."
           fi
