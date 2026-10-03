@@ -41,6 +41,11 @@ const checkAllInventory = async () => {
         for (const campaign of activeCampaigns) {
             const { key: campaignKey, data: campaignData } = campaign;
             
+            // Sécurité : Si c'est une campagne de cartes à l'unité, on s'assure que le marchand possède bien une URL dédiée
+            if (campaignKey === "CARTES_A_L_UNITE" && (!campaignData.merchant_urls || !campaignData.merchant_urls[merchant.name])) {
+                continue; 
+            }
+            
             let targetUrl = merchant.getSearchUrl(campaignData.search_query);
             if (campaignData.merchant_urls && campaignData.merchant_urls[merchant.name]) {
                 targetUrl = campaignData.merchant_urls[merchant.name];
@@ -53,7 +58,11 @@ const checkAllInventory = async () => {
 
                 try {
                     const html = await browserService.fetchPageHtml(browser, targetUrl);
-                    if (!html) throw new Error("Failed to retrieve HTML content.");
+                    if (!html) {
+                        logger.warn(`Skipping empty HTML for ${merchant.name} on ${campaignKey}`);
+                        success = true;
+                        continue;
+                    }
 
                     const htmlLower = html.toLowerCase();
                     const visibleText = cheerio.load(html)('body').text().toLowerCase();
@@ -74,9 +83,9 @@ const checkAllInventory = async () => {
 
                     for (const [productKey, targetObj] of Object.entries(campaignData.products)) {
                         let isDetected = false;
-                        if (html.includes(targetObj.ean) && targetObj.ean !== "N/A") {
+                        if (targetObj.ean && targetObj.ean !== "N/A" && html.includes(targetObj.ean)) {
                             isDetected = true;
-                        } else {
+                        } else if (targetObj.required_keywords) {
                             isDetected = targetObj.required_keywords.some(wordGroup => 
                                 wordGroup.every(word => visibleText.includes(word))
                             );
@@ -110,6 +119,7 @@ const checkAllInventory = async () => {
 
                 } catch (error) {
                     logger.error(`Error on ${merchant.name} [${campaignKey}]: ${error.message}`);
+                    success = true; // On passe à la suite pour ne pas bloquer le script entier
                 }
             }
         }
