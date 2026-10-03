@@ -39,6 +39,54 @@
       "compteur_apparitions": 0,
       "derniere_apparition": "N/A",
       "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
     }
   },
   "JOUECLUB": {
@@ -107,6 +155,54 @@
       "compteur_apparitions": 0,
       "derniere_apparition": "N/A",
       "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
     }
   },
   "FNAC": {
@@ -149,6 +245,54 @@
       "compteur_apparitions": 0,
       "derniere_apparition": "N/A",
       "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
     }
   },
   "KAIRYU": {
@@ -185,6 +329,102 @@
       "derniere_disparition": "N/A"
     },
     "TRIPACK_HEROS_TRANSCENDANTS_FR": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_ME01_LUCARIO": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_ME01_GARDEVOIR": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_ME02.5_HEROS": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "BUNDLE_ME02.5_HEROS": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "TRIPACK_ME03_EQUILIBRE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "SINGLE_GARDE_DE_FER_225": {
       "etat_actuel": false,
       "statut": "🔴 RUPTURE",
       "derniere_modification": "N/A",
@@ -234,6 +474,54 @@
       "compteur_apparitions": 0,
       "derniere_apparition": "N/A",
       "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
     }
   },
   "CULTURA": {},
@@ -271,6 +559,54 @@
       "derniere_disparition": "N/A"
     },
     "TRIPACK_HEROS_TRANSCENDANTS_FR": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
       "etat_actuel": false,
       "statut": "🔴 RUPTURE",
       "derniere_modification": "N/A",
@@ -319,6 +655,54 @@
       "compteur_apparitions": 0,
       "derniere_apparition": "N/A",
       "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
     }
   },
   "CARREFOUR": {},
@@ -356,6 +740,102 @@
       "derniere_disparition": "N/A"
     },
     "TRIPACK_HEROS_TRANSCENDANTS_FR": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_ME01_LUCARIO": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_ME01_GARDEVOIR": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_ME02.5_HEROS": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "BUNDLE_ME02.5_HEROS": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "TRIPACK_ME03_EQUILIBRE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08_ETINCELLES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV08.5_PRISMATIQUES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10_RIVALITES": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EV10.5_FLAMME": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB11_ORIGINE": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "ETB_EB12.5_ZENITH": {
+      "etat_actuel": false,
+      "statut": "🔴 RUPTURE",
+      "derniere_modification": "N/A",
+      "compteur_apparitions": 0,
+      "derniere_apparition": "N/A",
+      "derniere_disparition": "N/A"
+    },
+    "SINGLE_GARDE_DE_FER_225": {
       "etat_actuel": false,
       "statut": "🔴 RUPTURE",
       "derniere_modification": "N/A",
