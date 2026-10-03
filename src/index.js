@@ -5,7 +5,7 @@
 
 const cheerio = require('cheerio');
 const logger = require('./utils/logger');
-const { TARGETS, ANTI_BOT_KEYWORDS } = require('./config/constants');
+const { CAMPAIGNS, ANTI_BOT_KEYWORDS } = require('./config/constants');
 const { MERCHANTS } = require('./sites');
 const browserService = require('./services/browser');
 const backlogService = require('./services/backlog');
@@ -19,23 +19,33 @@ const checkAllInventory = async () => {
     let hasBacklogChanged = false;
     let inventoryStatus = {}; 
 
-    // FILTER ACTIVE MERCHANTS
-    // Currently tracking 30th anniversary items, which are physical-only in large retailers.
-    // We only scrape pure online players for now.
-    const activeMerchants = MERCHANTS.filter(m => m.type === 'pure_player');
-
     const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
 
-    logger.system(`Starting Playwright browser engine for ${activeMerchants.length} targeted merchants...`);
+    logger.system(`Starting Playwright browser engine...`);
     const browser = await browserService.launchBrowser();
     if (!browser) {
         logger.error("Aborting process: Browser failed to start.");
         return;
     }
 
-    for (const merchant of activeMerchants) {
-        logger.system(`Checking inventory for: ${merchant.name}`);
+    for (const merchant of MERCHANTS) {
+        logger.system(`Checking inventory for: ${merchant.name} (Type: ${merchant.type})`);
         let success = false;
+
+        // Determine which products this merchant is allowed to sell based on campaign rules
+        let activeTargetsForMerchant = {};
+        for (const [campaignKey, campaignData] of Object.entries(CAMPAIGNS)) {
+            if (campaignData.allowed_merchant_types.includes(merchant.type)) {
+                // Merge all allowed products into a single verification list for this merchant
+                Object.assign(activeTargetsForMerchant, campaignData.products);
+            }
+        }
+
+        // If no products are scheduled to be checked on this site, skip entirely to save resources
+        if (Object.keys(activeTargetsForMerchant).length === 0) {
+            logger.info(`Skipping ${merchant.name}: No active campaigns target this merchant type.`);
+            continue;
+        }
 
         // Initialize merchant in backlog if it doesn't exist
         if (!backlog[merchant.name] || backlog[merchant.name].historique) {
@@ -59,14 +69,14 @@ const checkAllInventory = async () => {
                 const isBotDetected = ANTI_BOT_KEYWORDS.some(kw => htmlLower.includes(kw));
                 if (isBotDetected) {
                     logger.warn(`Anti-bot or block detected on ${merchant.name}. Skipping for this run.`);
-                    success = true; // We skip cleanly, no need to retry
+                    success = true; 
                     continue;
                 }
 
                 // === SMART TARGET DETECTION ON VISIBLE TEXT ===
                 let productsFoundOnPage = [];
 
-                for (const [productKey, targetObj] of Object.entries(TARGETS)) {
+                for (const [productKey, targetObj] of Object.entries(activeTargetsForMerchant)) {
                     // Initialize product state in backlog if missing
                     if (!backlog[merchant.name][productKey]) {
                         backlog[merchant.name][productKey] = {
@@ -92,6 +102,15 @@ const checkAllInventory = async () => {
                                 isDetected = true;
                                 break;
                             }
+                        }
+                    }
+
+                    // === LANGUAGE / EXCLUSION FILTER ===
+                    if (isDetected && targetObj.excluded_keywords) {
+                        const hasExcludedWord = targetObj.excluded_keywords.some(word => visibleText.includes(word));
+                        if (hasExcludedWord) {
+                            logger.warn(`[FILTER] Product ${productKey} detected but ignored due to foreign language keyword.`);
+                            isDetected = false; 
                         }
                     }
 
