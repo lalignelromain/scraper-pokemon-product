@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main orchestrator for the Pokemon TCG Scraper.
+ * @fileoverview Main orchestrator for the Pokemon TCG Scraper (Stabilized Version).
  */
 const cheerio = require('cheerio');
 const logger = require('./utils/logger');
@@ -97,11 +97,13 @@ const checkAllInventory = async () => {
                             );
                         }
 
-                        // === LANGUAGE / EXCLUSION FILTER ===
+                        // === PRECISE EXCLUSION FILTER ===
                         if (isDetected) {
                             if (targetObj.excluded_keywords) {
-                                if (targetObj.excluded_keywords.some(word => visibleText.includes(word))) {
-                                    logger.warn(`[FILTER] Product ${productKey} ignored (Foreign keyword detected).`);
+                                // On vérifie si une phrase d'exclusion entière est présente, pas un simple mot isolé
+                                const matchExclusion = targetObj.excluded_keywords.some(phrase => visibleText.includes(phrase));
+                                if (matchExclusion) {
+                                    logger.warn(`[FILTER] Product ${productKey} ignored (Strict exclusion keyword matched).`);
                                     isDetected = false; 
                                 }
                             }
