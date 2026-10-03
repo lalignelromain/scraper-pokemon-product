@@ -2,22 +2,23 @@ name: Pokemon Scraper
 
 on:
   schedule:
-    # De 8h à 11h (6h à 9h en UTC), toutes les 10 minutes, tous les jours
     - cron: '*/10 6-9 * * *'
-    # De 16h à 22h (14h à 20h en UTC), toutes les 30 minutes, tous les jours
     - cron: '*/30 14-20 * * *'
   workflow_dispatch:
+
+# On donne explicitement le droit au bot de sauvegarder le fichier json à la fin
+permissions:
+  contents: write
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # On revient au checkout standard (sans le token qui fait planter)
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -35,7 +36,7 @@ jobs:
           NTFY_TOPIC_COFFRET: ${{ secrets.NTFY_TOPIC_COFFRET }}
           NTFY_TOPIC_BUNDLE_BLISTER: ${{ secrets.NTFY_TOPIC_BUNDLE_BLISTER }}
           NTFY_TOPIC_30ANS: ${{ secrets.NTFY_TOPIC_30ANS }}
-
+          
       # NOUVELLE ÉTAPE : Sauvegarde de la mémoire des stocks
       - name: Save State to GitHub
         run: |
