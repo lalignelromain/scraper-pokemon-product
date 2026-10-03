@@ -19,16 +19,21 @@ const checkAllInventory = async () => {
     let hasBacklogChanged = false;
     let inventoryStatus = {}; 
 
+    // FILTER ACTIVE MERCHANTS
+    // Currently tracking 30th anniversary items, which are physical-only in large retailers.
+    // We only scrape pure online players for now.
+    const activeMerchants = MERCHANTS.filter(m => m.type === 'pure_player');
+
     const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
 
-    logger.system("Starting Playwright browser engine...");
+    logger.system(`Starting Playwright browser engine for ${activeMerchants.length} targeted merchants...`);
     const browser = await browserService.launchBrowser();
     if (!browser) {
         logger.error("Aborting process: Browser failed to start.");
         return;
     }
 
-    for (const merchant of MERCHANTS) {
+    for (const merchant of activeMerchants) {
         logger.system(`Checking inventory for: ${merchant.name}`);
         let success = false;
 
