@@ -1,83 +1,115 @@
 /**
- * @fileoverview Global constants, targets configuration, and categorized products linked to exact Ntfy topics.
+ * @fileoverview Configuration constants for campaigns, topics, and anti-bot detection.
  */
 
-try {
-    require('dotenv').config();
-} catch (error) {
-    // Silently ignore in GitHub Actions
-}
-
 const TOPICS = {
-    ME_30ANS: process.env.NTFY_TOPIC_30ANS,
-    BUNDLE_BLISTER: process.env.NTFY_TOPIC_BUNDLE_BLISTER,
     CARTE: process.env.NTFY_TOPIC_CARTE,
+    ETB: process.env.NTFY_TOPIC_ETB,
     COFFRET: process.env.NTFY_TOPIC_COFFRET,
-    ETB: process.env.NTFY_TOPIC_ETB
+    BUNDLE: process.env.NTFY_TOPIC_BUNDLE_BLISTER,
+    TRENTE_ANS: process.env.NTFY_TOPIC_30ANS
 };
 
-const CONFIG = {
-    HEARTBEAT_HOURS: [8, 16, 22],
-    HEARTBEAT_TOPIC: TOPICS.ETB 
-};
+const ANTI_BOT_KEYWORDS = [
+    "cloudflare",
+    "captcha",
+    "are you a human",
+    "verify you are human",
+    "access denied",
+    "forbidden"
+];
 
 const CAMPAIGNS = {
-    // Campagne 30 ans : Réservée aux Pure Players uniquement
-    "SERIE_30_ANS_ME": {
-        allowed_merchant_types: ["pure_player"],
-        search_query: "pokemon 30 ans",
-        merchant_urls: {},
-        products: {
-            "ETB_ME01_LUCARIO": {
-                name: "ETB ME01 - Méga-Évolution - Lucario", ean: "A_COMPLETER", topic: TOPICS.ME_30ANS,
-                required_keywords: [ ["etb", "mega", "lucario"], ["coffret", "dresseur", "lucario"] ],
-                excluded_keywords: ["version japonaise", "version anglaise", "import jp"]
-            },
-            "BUNDLE_ME02.5_HEROS": {
-                name: "Bundle Pokemon ME02.5 - Héros Transcendant", ean: "A_COMPLETER", topic: TOPICS.BUNDLE_BLISTER,
-                required_keywords: [ ["bundle", "héros", "transcendant"], ["bundle", "heros", "transcendant"] ],
-                excluded_keywords: ["version japonaise", "version anglaise"]
-            }
-        }
-    },
-    // Campagnes Standard (ETB, Coffrets, Blisters, Bundles) : Ouvertes aux Enseignes Physiques ET Pure Players
     "SERIES_STANDARD_ETB_COFFRETS": {
         allowed_merchant_types: ["physical_retailer", "pure_player"],
         search_query: "pokemon coffret etb",
-        merchant_urls: {},
         products: {
             "ETB_EV08_ETINCELLES": {
-                name: "ETB EV08 - Étincelles Déferlantes", ean: "A_COMPLETER", topic: TOPICS.ETB,
-                required_keywords: [ ["etb", "étincelles", "déferlantes"], ["etb", "etincelles", "deferlantes"] ],
-                excluded_keywords: ["version japonaise", "version anglaise"]
+                name: "ETB Écarlate et Violet 08 - Étincelles Déferlantes",
+                ean: "0820650559797",
+                topic: TOPICS.ETB,
+                required_keywords: [["etb", "étincelles"], ["coffret", "dresseur", "etincelles"]],
+                excluded_keywords: []
             },
             "COFFRET_STANDARD_POKEMON": {
-                name: "Coffret Dresseur / Collection Standard", ean: "A_COMPLETER", topic: TOPICS.COFFRET,
-                required_keywords: [ ["coffret", "pokemon"], ["coffret dresseur d'élite"] ],
-                excluded_keywords: ["version japonaise"]
+                name: "Coffret Standard Pokémon",
+                ean: "N/A",
+                topic: TOPICS.COFFRET,
+                required_keywords: [["coffret", "pokemon"]],
+                excluded_keywords: []
             }
         }
     },
-    // Campagne Cartes à l'unité : Réservée aux Pure Players uniquement
+    "SERIE_30_ANS_ME": {
+        allowed_merchant_types: ["physical_retailer", "pure_player"],
+        search_query: "pokemon 30 ans",
+        products: {
+            "BUNDLE_ME02.5_HEROS": {
+                name: "Bundle 30 Ans",
+                ean: "N/A",
+                topic: TOPICS.BUNDLE,
+                required_keywords: [["bundle", "30 ans"]],
+                excluded_keywords: []
+            }
+        }
+    },
     "CARTES_A_L_UNITE": {
         allowed_merchant_types: ["pure_player"],
         search_query: "pokemon carte a l'unite", 
-        merchant_urls: {},
+        merchant_urls: {
+            "KAIRYU": "https://kairyu.fr/search?filter.p.m.custom.langue=Fran%C3%A7ais&filter.p.m.custom.s_rie=Forces+Temporelles&filter.v.availability=1&q=*&sort_by=price-descending&type=product",
+            "BLAZING TAIL": "https://www.blazingtail.fr/116-cartes-pokemon-forces-temporelles-ecarlate-et-violet",
+            "FANTASY SPHERE": "https://www.fantasysphere.net/carte-a-lunite-pokemon/bloc-ecarlate-et-violet/sv5-pokemon-ecarlate-et-violet-force-temporelle/",
+            "CARDS HUNTER": "https://www.cardshunter.fr/categorie-produit/cartes-a-lunite/ecarlate-et-violet/ev-forces-temporelles/",
+            "DESTOCKTCG": "https://www.destocktcg.fr/search?type=product&q=skip_singles",
+            "VCOLLECT": "https://vcollect.fr/search?q=skip_singles"
+        },
         products: {
-            "SINGLE_GARDE_DE_FER_225": {
-                name: "Garde-de-Fer ex 225/162 (Force Temporelle)", ean: "N/A", topic: TOPICS.CARTE,
-                required_keywords: [ ["garde-de-fer", "225/162"], ["iron", "leaves", "225/162"] ],
-                excluded_keywords: ["version japonaise", "carte gradée pca"]
+            "SINGLE_SERPENTE_EAU_205": {
+                name: "Serpente-Eau ex 205/162 (Forces Temporelles)", ean: "N/A", topic: TOPICS.CARTE,
+                required_keywords: [ 
+                    ["serpente-eau", "205/162"], 
+                    ["serpente", "eau", "205"] 
+                ],
+                excluded_keywords: ["japonaise", "anglaise", "pca", "psa", "gradée", "gradé"]
+            },
+            "SINGLE_IRE_FOUDRE_208": {
+                name: "Ire-Foudre ex 208/162 (Forces Temporelles)", ean: "N/A", topic: TOPICS.CARTE,
+                required_keywords: [ 
+                    ["ire-foudre", "208/162"], 
+                    ["ire", "foudre", "208"] 
+                ],
+                excluded_keywords: ["japonaise", "anglaise", "pca", "psa", "gradée", "gradé"]
+            },
+            "SINGLE_FEU_PERCANT_204": {
+                name: "Feu-Perçant ex 204/162 (Forces Temporelles)", ean: "N/A", topic: TOPICS.CARTE,
+                required_keywords: [ 
+                    ["feu-perçant", "204"], 
+                    ["feu-percant", "204"],
+                    ["feu", "perçant", "204/162"]
+                ],
+                excluded_keywords: ["japonaise", "anglaise", "pca", "psa", "gradée", "gradé"]
+            },
+            "SINGLE_CHEF_DE_FER_206": {
+                name: "Chef-de-Fer ex 206/162 (Forces Temporelles)", ean: "N/A", topic: TOPICS.CARTE,
+                required_keywords: [ 
+                    ["chef-de-fer", "206/162"], 
+                    ["chef", "fer", "206"],
+                    ["chef-de-fer", "206"]
+                ],
+                excluded_keywords: ["japonaise", "anglaise", "pca", "psa", "gradée", "gradé"]
+            },
+            "SINGLE_VERT_DE_FER_203": {
+                name: "Vert-de-Fer ex 203/162 (Forces Temporelles)", ean: "N/A", topic: TOPICS.CARTE,
+                required_keywords: [ 
+                    ["vert-de-fer", "203/162"], 
+                    ["vert", "fer", "203"],
+                    ["vert-de-fer", "203"]
+                ],
+                excluded_keywords: ["japonaise", "anglaise", "pca", "psa", "gradée", "gradé"]
             }
         }
     }
 };
 
-const USER_AGENTS = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15'
-];
-
-const ANTI_BOT_KEYWORDS = [ "cloudflare", "access denied", "prouver que vous êtes humain", "verify you are human", "checking your browser" ];
-
-module.exports = { CONFIG, CAMPAIGNS, USER_AGENTS, ANTI_BOT_KEYWORDS };
+module.exports = { TOPICS, ANTI_BOT_KEYWORDS, CAMPAIGNS };
