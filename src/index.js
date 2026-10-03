@@ -1,6 +1,7 @@
 /**
- * @fileoverview Main orchestrator for the Pokemon TCG Scraper (Stabilized Version).
+ * @fileoverview Main orchestrator with state persistence (No spam version).
  */
+const fs = require('fs');
 const cheerio = require('cheerio');
 const logger = require('./utils/logger');
 const { CAMPAIGNS, ANTI_BOT_KEYWORDS } = require('./config/constants');
@@ -8,8 +9,15 @@ const { MERCHANTS } = require('./sites');
 const browserService = require('./services/browser');
 const notifierService = require('./services/notifier');
 
+const STATE_FILE = './stock_state.json';
+
 const checkAllInventory = async () => {
-    let inventoryStatus = {}; 
+    // 1. Charger la mémoire du passage précédent
+    let previousState = {};
+    if (fs.existsSync(STATE_FILE)) {
+        previousState = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    }
+    let currentState = {}; 
 
     logger.system(`Starting Playwright browser engine...`);
     const browser = await browserService.launchBrowser();
@@ -28,19 +36,16 @@ const checkAllInventory = async () => {
 
         if (activeCampaigns.length === 0) continue;
 
-        logger.system(`=== Store: ${merchant.name} (Type: ${merchant.type}) ===`);
+        logger.system(`=== Store: ${merchant.name} ===`);
 
         for (const campaign of activeCampaigns) {
             const { key: campaignKey, data: campaignData } = campaign;
             
             let targetUrl = merchant.getSearchUrl(campaignData.search_query);
-            if (campaignData.merchant_urls) {
-                if (campaignData.merchant_urls[merchant.name]) {
-                    targetUrl = campaignData.merchant_urls[merchant.name];
-                }
+            if (campaignData.merchant_urls && campaignData.merchant_urls[merchant.name]) {
+                targetUrl = campaignData.merchant_urls[merchant.name];
             }
             
-            logger.info(`🔍 Campaign [${campaignKey}] -> URL: ${targetUrl}`);
             let success = false;
 
             for (let attempt = 1; attempt <= 2; attempt++) {
@@ -56,16 +61,20 @@ const checkAllInventory = async () => {
                     // === ANTI-BOT SHIELD ===
                     if (ANTI_BOT_KEYWORDS.some(kw => htmlLower.includes(kw))) {
                         logger.warn(`Anti-bot block on ${merchant.name}. Skipping this campaign.`);
+                        // On conserve l'état précédent pour ne pas déclencher de fausse rupture
+                        for (const productKey of Object.keys(campaignData.products)) {
+                            const stateKey = `${merchant.name}_${productKey}`;
+                            currentState[stateKey] = previousState[stateKey] || false;
+                        }
                         success = true; 
                         continue;
                     }
 
-                    // === PRODUCT DETECTION ===
-                    let productsFoundOnPage = [];
+                    const isGenuinelyInStock = merchant.verifyStock(html);
 
                     for (const [productKey, targetObj] of Object.entries(campaignData.products)) {
                         let isDetected = false;
-                        if (html.includes(targetObj.ean)) {
+                        if (html.includes(targetObj.ean) && targetObj.ean !== "N/A") {
                             isDetected = true;
                         } else {
                             isDetected = targetObj.required_keywords.some(wordGroup => 
@@ -73,54 +82,44 @@ const checkAllInventory = async () => {
                             );
                         }
 
-                        // === PRECISE EXCLUSION FILTER ===
-                        if (isDetected) {
-                            if (targetObj.excluded_keywords) {
-                                const matchExclusion = targetObj.excluded_keywords.some(phrase => visibleText.includes(phrase));
-                                if (matchExclusion) {
-                                    logger.warn(`[FILTER] Product ${productKey} ignored (Strict exclusion keyword matched).`);
-                                    isDetected = false; 
-                                }
-                            }
+                        if (isDetected && targetObj.excluded_keywords) {
+                            const matchExclusion = targetObj.excluded_keywords.some(phrase => visibleText.includes(phrase));
+                            if (matchExclusion) isDetected = false; 
                         }
 
-                        if (isDetected) {
-                            productsFoundOnPage.push(targetObj.name);
-                            logger.info(`[RADAR] ${merchant.name} - ${productKey} -> 🟢 DETECTED ON PAGE`);
-                        }
-                    }
+                        // Analyse du changement d'état
+                        const stateKey = `${merchant.name}_${productKey}`;
+                        const wasInStock = previousState[stateKey] || false;
+                        const isInStockNow = isDetected && isGenuinelyInStock;
 
-                    // === BUY BUTTON VERIFICATION ===
-                    const isGenuinelyInStock = merchant.verifyStock(html);
-                    inventoryStatus[merchant.name] = isGenuinelyInStock;
-                    
-                    if (isGenuinelyInStock) {
-                        if (productsFoundOnPage.length > 0) {
-                            for (const product of productsFoundOnPage) {
-                                let productTopic = null;
-                                for (const [pKey, pObj] of Object.entries(campaignData.products)) {
-                                    if (pObj.name === product) {
-                                        productTopic = pObj.topic;
-                                    }
-                                }
-                                await notifierService.sendStockAlert(merchant.name, targetUrl, product, productTopic);
-                            }
-                        } else {
-                            logger.warn(`False positive on ${merchant.name}: Buy button active, but no exact product match.`);
+                        currentState[stateKey] = isInStockNow; // On enregistre le nouvel état
+
+                        if (isInStockNow && !wasInStock) {
+                            logger.info(`[ALERTE] 🟢 ${targetObj.name} est de retour en STOCK chez ${merchant.name}`);
+                            await notifierService.sendStockAlert(merchant.name, targetUrl, targetObj.name, targetObj.topic, "IN_STOCK");
+                        } 
+                        else if (!isInStockNow && wasInStock) {
+                            logger.info(`[ALERTE] 🔴 ${targetObj.name} est tombé en RUPTURE chez ${merchant.name}`);
+                            await notifierService.sendStockAlert(merchant.name, targetUrl, targetObj.name, targetObj.topic, "OUT_OF_STOCK");
+                        } 
+                        else if (isInStockNow && wasInStock) {
+                            logger.info(`[MÉMOIRE] ${merchant.name} - ${productKey} -> Toujours en stock (Silence)`);
                         }
                     }
                     success = true;
 
                 } catch (error) {
-                    logger.error(`Error on ${merchant.name} [${campaignKey}] (Attempt ${attempt}/2): ${error.message}`);
+                    logger.error(`Error on ${merchant.name} [${campaignKey}]: ${error.message}`);
                 }
             }
         }
     }
 
     await browser.close();
-    await notifierService.sendHeartbeat(inventoryStatus);
-    logger.success("Verification cycle complete.\n");
+    
+    // 2. Sauvegarder la mémoire pour le prochain run
+    fs.writeFileSync(STATE_FILE, JSON.stringify(currentState, null, 2));
+    logger.success("Verification cycle complete. State memory saved.\n");
 };
 
 checkAllInventory();
