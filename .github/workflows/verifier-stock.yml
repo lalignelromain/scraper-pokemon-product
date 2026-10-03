@@ -1,36 +1,46 @@
-name: Pokemon TCG Scraper
+name: Pokemon Scraper
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
   schedule:
-    - cron: '0 */2 * * *'
+    # De 8h à 11h (6h à 9h en UTC), toutes les 10 minutes, tous les jours
+    - cron: '*/10 6-9 * * *'
+    # De 16h à 22h (14h à 20h en UTC), toutes les 30 minutes, tous les jours
+    - cron: '*/30 14-20 * * *'
+  workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Récupération du code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ⚙️ Configuration de Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 📦 Installation des dépendances
-        run: npm install playwright cheerio dotenv
+      - name: Install Dependencies
+        run: npm install
 
-      - name: 🎭 Installation des navigateurs Playwright
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium
 
-      - name: 🚀 Lancement du Scraper
+      - name: Run Scraper
         run: node src/index.js
         env:
-          NTFY_TOPIC_30ANS: ${{ secrets.NTFY_TOPIC_30ANS }}
+          NTFY_TOPIC_CARTE: ${{ secrets.NTFY_TOPIC_CARTE }}
           NTFY_TOPIC_ETB: ${{ secrets.NTFY_TOPIC_ETB }}
           NTFY_TOPIC_COFFRET: ${{ secrets.NTFY_TOPIC_COFFRET }}
           NTFY_TOPIC_BUNDLE_BLISTER: ${{ secrets.NTFY_TOPIC_BUNDLE_BLISTER }}
-          NTFY_TOPIC_CARTE: ${{ secrets.NTFY_TOPIC_CARTE }}
+          NTFY_TOPIC_30ANS: ${{ secrets.NTFY_TOPIC_30ANS }}
+
+      # NOUVELLE ÉTAPE : Sauvegarde de la mémoire des stocks
+      - name: Save State to GitHub
+        run: |
+          git config --global user.name "Scraper Bot"
+          git config --global user.email "bot@scraper.local"
+          git add stock_state.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Mise à jour des stocks [skip ci]"
+          git push
