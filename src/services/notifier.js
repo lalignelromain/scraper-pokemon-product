@@ -1,101 +1,78 @@
 /**
- * @fileoverview Service handling push notifications via NTFY.sh
+ * @fileoverview Handles sending notifications via Ntfy.
  */
-
 const { CONFIG } = require('../config/constants');
 const logger = require('../utils/logger');
 
-/**
- * Sends an urgent stock alert notification.
- * @param {string} merchantName - The name of the website (e.g., "JOUECLUB").
- * @param {string} url - The direct product URL.
- * @param {string} productName - The detected product name.
- * @returns {Promise<void>}
- */
-const sendStockAlert = async (merchantName, url, productName) => {
-    if (!CONFIG.NTFY_TOPIC) {
-        logger.warn(`Cannot send alert for ${merchantName} - NTFY_TOPIC is missing.`);
+const sendStockAlert = async (merchantName, url, productName, productTopic) => {
+    let targetTopic = productTopic;
+    if (!targetTopic) {
+        targetTopic = CONFIG.HEARTBEAT_TOPIC; 
+    }
+
+    if (!targetTopic) {
+        logger.warn("Notification skipped: No NTFY topic configured for this alert.");
         return;
     }
 
     try {
-        const fetchArgs = {
+        await fetch(`https://ntfy.sh/${targetTopic}`, {
             method: 'POST',
-            body: `🚨 ALERTE STOCK 🚨\nLe produit [ ${productName} ] est EN STOCK sur ${merchantName} !\nLien : ${url}`,
+            body: `🚨 STOCK DETECTE chez ${merchantName} 🚨\nProduit : ${productName}\nFonce !`,
             headers: {
-                'Title': `Pokemon 30e : ${productName} !`,
+                'Title': 'Pokémon en Stock !',
                 'Priority': 'urgent',
-                'Tags': 'rotating_light,pokemon'
+                'Tags': 'warning,tada',
+                'Click': url
             }
-        };
-        
-        const response = await fetch(`https://ntfy.sh/${CONFIG.NTFY_TOPIC}`, fetchArgs);
-        
-        if (!response.ok) {
-            logger.error(`NTFY rejected the alert for ${merchantName}. Status: ${response.status}`);
-        } else {
-            logger.success(`Push alert sent for ${merchantName} - ${productName}`);
-        }
+        });
+        logger.success(`Notification sent to ${targetTopic} for ${productName} at ${merchantName}`);
     } catch (error) {
-        logger.error(`Network error while sending alert for ${merchantName}: ${error.message}`);
+        logger.error(`Failed to send notification: ${error.message}`);
     }
 };
 
-/**
- * Sends a periodic heartbeat to confirm the scraper is alive and reports current stock status.
- * @param {Object} inventoryStatus - Map of merchant names to boolean stock status.
- * @returns {Promise<void>}
- */
 const sendHeartbeat = async (inventoryStatus) => {
-    if (!CONFIG.NTFY_TOPIC) return;
-
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('fr-FR', {
-        timeZone: 'Europe/Paris',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false
-    });
+    const currentHour = new Date().getHours();
+    let shouldSend = false;
     
-    const parts = formatter.formatToParts(now);
-    const hourFR = parseInt(parts.find(p => p.type === 'hour').value, 10);
-    const minuteFR = parseInt(parts.find(p => p.type === 'minute').value, 10);
-
-    // Only send if we are at the beginning (first 5 mins) of a scheduled hour
-    const isScheduledReportHour = CONFIG.HEARTBEAT_HOURS.includes(hourFR) && minuteFR < 5;
-    
-    if (!isScheduledReportHour) return;
-
-    let message = `🤖 BILAN DES STOCKS (${hourFR}h00)\n\n`;
-    for (const [merchant, inStock] of Object.entries(inventoryStatus)) {
-        const statusStr = inStock ? "🟢 EN STOCK" : "🔴 Rupture";
-        message += `${merchant} : ${statusStr}\n`;
+    if (CONFIG.HEARTBEAT_HOURS.includes(currentHour)) {
+        shouldSend = true;
     }
-    message += "\n✅ Scraper Playwright opérationnel.";
+
+    if (!shouldSend) return;
+
+    if (!CONFIG.HEARTBEAT_TOPIC) {
+        logger.warn("Heartbeat skipped: CONFIG.HEARTBEAT_TOPIC is not defined.");
+        return;
+    }
+
+    const onlineStores = [];
+    const offlineStores = [];
+
+    for (const [store, isOnline] of Object.entries(inventoryStatus)) {
+        if (isOnline) {
+            onlineStores.push(store);
+        } else {
+            offlineStores.push(store);
+        }
+    }
+
+    const message = `Boutiques actives : ${onlineStores.length}\nBoutiques hors-ligne/bloquées : ${offlineStores.length}`;
 
     try {
-        const fetchArgs = {
+        await fetch(`https://ntfy.sh/${CONFIG.HEARTBEAT_TOPIC}`, {
             method: 'POST',
             body: message,
             headers: {
-                'Title': `Heartbeat (${hourFR}h00)`,
-                'Priority': 'low',
-                'Tags': 'robot,bar_chart'
+                'Title': '🤖 Radar Pokémon Actif',
+                'Tags': 'robot'
             }
-        };
-        const response = await fetch(`https://ntfy.sh/${CONFIG.NTFY_TOPIC}`, fetchArgs);
-        
-        if (!response.ok) {
-            logger.error(`NTFY rejected the heartbeat. Status: ${response.status}`);
-        } else {
-            logger.success(`Heartbeat notification (${hourFR}h) sent successfully.`);
-        }
+        });
+        logger.success("Heartbeat notification sent.");
     } catch (error) {
-        logger.error(`Network error sending heartbeat: ${error.message}`);
+        logger.error(`Failed to send heartbeat: ${error.message}`);
     }
 };
 
-module.exports = {
-    sendStockAlert,
-    sendHeartbeat
-};
+module.exports = { sendStockAlert, sendHeartbeat };
