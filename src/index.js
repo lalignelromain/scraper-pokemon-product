@@ -135,7 +135,13 @@ const checkAllInventory = async () => {
                     if (isGenuinelyInStock) {
                         if (productsFoundOnPage.length > 0) {
                             for (const product of productsFoundOnPage) {
-                                await notifierService.sendStockAlert(merchant.name, targetUrl, product);
+                                let productTopic = null;
+                                for (const [pKey, pObj] of Object.entries(campaignData.products)) {
+                                    if (pObj.name === product) {
+                                        productTopic = pObj.topic;
+                                    }
+                                }
+                                await notifierService.sendStockAlert(merchant.name, targetUrl, product, productTopic);
                             }
                         } else {
                             logger.warn(`False positive on ${merchant.name}: Buy button active, but no exact product match.`);
