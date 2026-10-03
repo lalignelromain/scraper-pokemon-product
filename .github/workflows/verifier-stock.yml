@@ -27,7 +27,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: 🚀 Lancement du Scraper
-        run: node scraper.js
+        run: node src/index.js
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
 
