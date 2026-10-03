@@ -17,10 +17,12 @@ const checkAllInventory = async () => {
 
     logger.system(`Starting Playwright browser engine...`);
     const browser = await browserService.launchBrowser();
-    if (!browser) return logger.error("Aborting process: Browser failed to start.");
+    if (!browser) {
+        logger.error("Aborting process: Browser failed to start.");
+        return;
+    }
 
     for (const merchant of MERCHANTS) {
-        // Find all active campaigns that authorize this type of merchant
         const activeCampaigns = [];
         for (const [campaignKey, campaignData] of Object.entries(CAMPAIGNS)) {
             if (campaignData.allowed_merchant_types.includes(merchant.type)) {
@@ -32,7 +34,14 @@ const checkAllInventory = async () => {
 
         logger.system(`=== Store: ${merchant.name} (Type: ${merchant.type}) ===`);
 
-        if (!backlog[merchant.name] || backlog[merchant.name].historique) {
+        let shouldInitBacklog = false;
+        if (!backlog[merchant.name]) {
+            shouldInitBacklog = true;
+        } else if (backlog[merchant.name].historique) {
+            shouldInitBacklog = true;
+        }
+
+        if (shouldInitBacklog) {
             backlog[merchant.name] = {}; 
             hasBacklogChanged = true;
         }
@@ -40,8 +49,12 @@ const checkAllInventory = async () => {
         for (const campaign of activeCampaigns) {
             const { key: campaignKey, data: campaignData } = campaign;
             
-            // Generate URL: Priority to direct link if it exists, otherwise use site search engine
-            const targetUrl = campaignData.merchant_urls?.[merchant.name] || merchant.getSearchUrl(campaignData.search_query);
+            let targetUrl = merchant.getSearchUrl(campaignData.search_query);
+            if (campaignData.merchant_urls) {
+                if (campaignData.merchant_urls[merchant.name]) {
+                    targetUrl = campaignData.merchant_urls[merchant.name];
+                }
+            }
             
             logger.info(`🔍 Campaign [${campaignKey}] -> URL: ${targetUrl}`);
             let success = false;
@@ -85,10 +98,12 @@ const checkAllInventory = async () => {
                         }
 
                         // === LANGUAGE / EXCLUSION FILTER ===
-                        if (isDetected && targetObj.excluded_keywords) {
-                            if (targetObj.excluded_keywords.some(word => visibleText.includes(word))) {
-                                logger.warn(`[FILTER] Product ${productKey} ignored (Foreign keyword detected).`);
-                                isDetected = false; 
+                        if (isDetected) {
+                            if (targetObj.excluded_keywords) {
+                                if (targetObj.excluded_keywords.some(word => visibleText.includes(word))) {
+                                    logger.warn(`[FILTER] Product ${productKey} ignored (Foreign keyword detected).`);
+                                    isDetected = false; 
+                                }
                             }
                         }
 
