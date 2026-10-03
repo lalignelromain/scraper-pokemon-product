@@ -15,7 +15,7 @@ jobs:
       - name: 📥 Récupération du code
         uses: actions/checkout@v4
 
-      - name: ⚙️️ Configuration de Node.js
+      - name: ⚙️ Configuration de Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -34,16 +34,3 @@ jobs:
           NTFY_TOPIC_COFFRET: ${{ secrets.NTFY_TOPIC_COFFRET }}
           NTFY_TOPIC_BUNDLE_BLISTER: ${{ secrets.NTFY_TOPIC_BUNDLE_BLISTER }}
           NTFY_TOPIC_CARTE: ${{ secrets.NTFY_TOPIC_CARTE }}
-
-      - name: 💾 Sauvegarde du Backlog
-        run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'actions@github.com'
-          git add backlog_pokemon.json
-          git diff --staged --quiet
-          if [ $? -ne 0 ]; then
-            git commit -m "chore(data): update backlog state"
-            git push
-          else
-            echo "Aucun changement dans le backlog a sauvegarder."
-          fi
