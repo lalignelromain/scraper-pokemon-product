@@ -106,7 +106,7 @@ const MERCHANTS = [
     {
         name: "BLAZING TAIL",
         type: "pure_player",
-        getSearchUrl: (query) => `https://blazingtail.fr/search?q=${encodeURIComponent(query)}`,
+        getSearchUrl: (query) => `https://www.blazingtail.fr/search?q=${encodeURIComponent(query)}`,
         verifyStock: (html) => {
             const zone = cheerio.load(html)('.product-grid, .grid').text().toLowerCase();
             if (!zone || ["rupture", "épuisé", "sold out"].some(kw => zone.includes(kw))) return false;
@@ -116,7 +116,7 @@ const MERCHANTS = [
     {
         name: "FANTASY SPHERE",
         type: "pure_player",
-        getSearchUrl: (query) => `https://www.fantasysphere.fr/recherche?controller=search&s=${encodeURIComponent(query)}`,
+        getSearchUrl: (query) => `https://www.fantasysphere.net/recherche?controller=search&s=${encodeURIComponent(query)}`,
         verifyStock: (html) => {
             const zone = cheerio.load(html)('.products, .product-list').text().toLowerCase();
             if (!zone || ["rupture", "épuisé", "indisponible"].some(kw => zone.includes(kw))) return false;
