@@ -2,7 +2,7 @@
  * @fileoverview Main orchestrator for the Pokemon TCG Scraper (Stabilized Version).
  */
 const cheerio = require('cheerio');
-const { CAMPAIGNS, ANTI_BOT_KEYWORDS } = require('./config/constants');
+const logger = require('./utils/logger');
 const { MERCHANTS } = require('./sites');
 const browserService = require('./services/browser');
 const notifierService = require('./services/notifier');
