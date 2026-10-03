@@ -23,7 +23,6 @@ const CONFIG = {
  */
 const CAMPAIGNS = {
     "SERIE_30_ANS": {
-        // 30th anniversary items are physical-only in large retailers, so we only scrape pure online players
         allowed_merchant_types: ["pure_player"],
         products: {
             "ETB_30ANS": {
@@ -43,14 +42,36 @@ const CAMPAIGNS = {
             }
         }
     },
-    "FORCE_TEMPORELLE": {
-        // Regular expansions are sold everywhere, so we scrape all merchant types
+    "RIVALITE_DESTINEE": {
+        // Série classique : on scanne tout le monde
         allowed_merchant_types: ["physical_retailer", "pure_player"],
         products: {
-            "ETB_FORCE_TEMPORELLE": {
-                name: "ETB Force Temporelle (Vert-de-Fer / Serpente-Eau)",
-                ean: "0196214146105", 
-                required_keywords: [ ["coffret", "dresseur", "temporelle"], ["etb", "temporelle"] ]
+            "ETB_RIVALITE_DESTINEE_FR": {
+                name: "ETB Rivalité Destinée (FR)",
+                ean: "EAN_A_COMPLETER", // Pense à mettre le vrai EAN quand il sera connu
+                required_keywords: [ 
+                    ["coffret", "dresseur", "rivalité", "destinée"], 
+                    ["coffret", "dresseur", "rivalite", "destinee"],
+                    ["etb", "rivalité", "destinée"],
+                    ["etb", "rivalite", "destinee"]
+                ],
+                excluded_keywords: ["japonais", "jp", "chinois", "cn", "anglais", "en"]
+            }
+        }
+    },
+    "HEROS_TRANSCENDANTS": {
+        // Série classique : on scanne tout le monde
+        allowed_merchant_types: ["physical_retailer", "pure_player"],
+        products: {
+            "TRIPACK_HEROS_TRANSCENDANTS_FR": {
+                name: "Coffret Tripack Héros Transcendants (FR)",
+                ean: "EAN_A_COMPLETER", 
+                required_keywords: [ 
+                    ["tripack", "héros", "transcendants"], 
+                    ["tripack", "heros", "transcendants"],
+                    ["blister", "3", "héros", "transcendants"] 
+                ],
+                excluded_keywords: ["japonais", "jp", "chinois", "cn", "anglais", "en"]
             }
         }
     }
