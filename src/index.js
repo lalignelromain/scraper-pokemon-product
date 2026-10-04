@@ -1,5 +1,5 @@
 /**
- * @fileoverview Main orchestrator with state persistence (No spam version).
+ * @fileoverview Main orchestrator with Scoped Extraction and State persistence.
  */
 const fs = require('fs');
 const cheerio = require('cheerio');
@@ -12,45 +12,29 @@ const notifierService = require('./services/notifier');
 const STATE_FILE = './stock_state.json';
 
 const checkAllInventory = async () => {
-    // 1. Charger la mémoire du passage précédent
     let previousState = {};
     if (fs.existsSync(STATE_FILE)) {
         previousState = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
     }
     let currentState = {}; 
 
-    logger.system(`Starting Playwright browser engine...`);
+    logger.system(`Starting Playwright Stealth engine...`);
     const browser = await browserService.launchBrowser();
-    if (!browser) {
-        logger.error("Aborting process: Browser failed to start.");
-        return;
-    }
+    if (!browser) return;
 
     for (const merchant of MERCHANTS) {
-        const activeCampaigns = [];
-        for (const [campaignKey, campaignData] of Object.entries(CAMPAIGNS)) {
-            if (campaignData.allowed_merchant_types.includes(merchant.type)) {
-                activeCampaigns.push({ key: campaignKey, data: campaignData });
-            }
-        }
-
-        if (activeCampaigns.length === 0) continue;
+        // Pour les cartes à l'unité, on cible uniquement la campagne correspondante
+        const campaignData = CAMPAIGNS["CARTES_A_L_UNITE"];
+        if (!campaignData.allowed_merchant_types.includes(merchant.type)) continue;
 
         logger.system(`=== Store: ${merchant.name} ===`);
 
-        for (const campaign of activeCampaigns) {
-            const { key: campaignKey, data: campaignData } = campaign;
+        for (const [productKey, targetObj] of Object.entries(campaignData.products)) {
+            const stateKey = `${merchant.name}_${productKey}`;
+            const wasInStock = previousState[stateKey] || false;
+            let isInStockNow = false;
             
-            // Sécurité : Si c'est une campagne de cartes à l'unité, on s'assure que le marchand possède bien une URL dédiée
-            if (campaignKey === "CARTES_A_L_UNITE" && (!campaignData.merchant_urls || !campaignData.merchant_urls[merchant.name])) {
-                continue; 
-            }
-            
-            let targetUrl = merchant.getSearchUrl(campaignData.search_query);
-            if (campaignData.merchant_urls && campaignData.merchant_urls[merchant.name]) {
-                targetUrl = campaignData.merchant_urls[merchant.name];
-            }
-            
+            const targetUrl = merchant.getSearchUrl(targetObj.search_query);
             let success = false;
 
             for (let attempt = 1; attempt <= 2; attempt++) {
@@ -59,78 +43,76 @@ const checkAllInventory = async () => {
                 try {
                     const html = await browserService.fetchPageHtml(browser, targetUrl);
                     if (!html) {
-                        logger.warn(`Skipping empty HTML for ${merchant.name} on ${campaignKey}`);
+                        logger.warn(`Skipping empty HTML for ${merchant.name}`);
                         success = true;
                         continue;
                     }
 
-                    // On utilise Cheerio pour extraire uniquement le texte visible
-                    const visibleText = cheerio.load(html)('body').text().toLowerCase();
+                    const $ = cheerio.load(html);
+                    const visibleText = $('body').text().toLowerCase();
 
                     // === ANTI-BOT SHIELD ===
-                    // CORRECTION : On scanne 'visibleText' et non 'htmlLower' pour éviter
-                    // de détecter "cloudflare" ou "captcha" dans les liens des balises <script>
                     if (ANTI_BOT_KEYWORDS.some(kw => visibleText.includes(kw))) {
-                        logger.warn(`Anti-bot block on ${merchant.name}. Skipping this campaign.`);
-                        // On conserve l'état précédent pour ne pas déclencher de fausse rupture
-                        for (const productKey of Object.keys(campaignData.products)) {
-                            const stateKey = `${merchant.name}_${productKey}`;
-                            currentState[stateKey] = previousState[stateKey] || false;
-                        }
+                        logger.warn(`Anti-bot block on ${merchant.name}. Retaining memory state.`);
+                        currentState[stateKey] = wasInStock; // On maintient l'état
                         success = true; 
                         continue;
                     }
 
-                    const isGenuinelyInStock = merchant.verifyStock(html);
+                    // === SCOPED EXTRACTION (Lecture par conteneur) ===
+                    const productBlocks = $(merchant.productBlockSelector).toArray();
+                    
+                    for (const block of productBlocks) {
+                        const blockText = $(block).text().toLowerCase();
+                        
+                        // 1. Validation Nom
+                        const hasName = targetObj.validation.must_include_one_name.some(name => blockText.includes(name));
+                        if (!hasName) continue; // On passe au bloc suivant
 
-                    for (const [productKey, targetObj] of Object.entries(campaignData.products)) {
-                        let isDetected = false;
-                        if (targetObj.ean && targetObj.ean !== "N/A" && html.includes(targetObj.ean)) {
-                            isDetected = true;
-                        } else if (targetObj.required_keywords) {
-                            isDetected = targetObj.required_keywords.some(wordGroup => 
-                                wordGroup.every(word => visibleText.includes(word))
-                            );
+                        // 2. Validation Numéro
+                        const hasNumber = targetObj.validation.must_include_one_number.some(num => blockText.includes(num));
+                        if (!hasNumber) continue;
+
+                        // 3. Validation Marqueur (Optionnel)
+                        if (targetObj.validation.must_include_one_marker) {
+                            const hasMarker = targetObj.validation.must_include_one_marker.some(marker => blockText.includes(marker));
+                            if (!hasMarker) continue;
                         }
 
-                        if (isDetected && targetObj.excluded_keywords) {
-                            const matchExclusion = targetObj.excluded_keywords.some(phrase => visibleText.includes(phrase));
-                            if (matchExclusion) isDetected = false; 
-                        }
+                        // 4. Blacklist Globale & Spécifique
+                        const hasBlacklistedWord = targetObj.validation.must_not_include.some(badWord => blockText.includes(badWord));
+                        if (hasBlacklistedWord) continue;
 
-                        // Analyse du changement d'état
-                        const stateKey = `${merchant.name}_${productKey}`;
-                        const wasInStock = previousState[stateKey] || false;
-                        const isInStockNow = isDetected && isGenuinelyInStock;
-
-                        currentState[stateKey] = isInStockNow; // On enregistre le nouvel état
-
-                        if (isInStockNow && !wasInStock) {
-                            logger.info(`[ALERTE] 🟢 ${targetObj.name} est de retour en STOCK chez ${merchant.name}`);
-                            await notifierService.sendStockAlert(merchant.name, targetUrl, targetObj.name, targetObj.topic, "IN_STOCK");
-                        } 
-                        else if (!isInStockNow && wasInStock) {
-                            logger.info(`[ALERTE] 🔴 ${targetObj.name} est tombé en RUPTURE chez ${merchant.name}`);
-                            await notifierService.sendStockAlert(merchant.name, targetUrl, targetObj.name, targetObj.topic, "OUT_OF_STOCK");
-                        } 
-                        else if (isInStockNow && wasInStock) {
-                            logger.info(`[MÉMOIRE] ${merchant.name} - ${productKey} -> Toujours en stock (Silence)`);
+                        // 5. Arrivé ici, la carte est EXACTEMENT la bonne. On vérifie son stock.
+                        if (merchant.verifyStock($, block)) {
+                            isInStockNow = true;
+                            break; // Le produit est trouvé et en stock, inutile de vérifier les autres blocs
                         }
                     }
+
+                    // === MACHINE A ETATS ET NOTIFICATIONS ===
+                    currentState[stateKey] = isInStockNow; 
+
+                    if (isInStockNow && !wasInStock) {
+                        logger.info(`[ALERTE] 🟢 ${targetObj.display_name} en STOCK chez ${merchant.name}`);
+                        await notifierService.sendStockAlert(merchant.name, targetUrl, targetObj.display_name, targetObj.topic, "IN_STOCK");
+                    } 
+                    else if (!isInStockNow && wasInStock) {
+                        logger.info(`[ALERTE] 🔴 ${targetObj.display_name} en RUPTURE chez ${merchant.name}`);
+                        await notifierService.sendStockAlert(merchant.name, targetUrl, targetObj.display_name, targetObj.topic, "OUT_OF_STOCK");
+                    }
+                    
                     success = true;
 
                 } catch (error) {
-                    logger.error(`Error on ${merchant.name} [${campaignKey}]: ${error.message}`);
-                    // CORRECTION : J'ai supprimé `success = true;` ici. 
-                    // Si une erreur survient (timeout réseau par exemple), la boucle fera maintenant sa 2ème tentative.
+                    logger.error(`Error on ${merchant.name} [${productKey}]: ${error.message}`);
+                    if (attempt === 2) currentState[stateKey] = wasInStock; // Sécurité au bout du 2e essai
                 }
             }
         }
     }
 
     await browser.close();
-    
-    // 2. Sauvegarder la mémoire pour le prochain run
     fs.writeFileSync(STATE_FILE, JSON.stringify(currentState, null, 2));
     logger.success("Verification cycle complete. State memory saved.\n");
 };
