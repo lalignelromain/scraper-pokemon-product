@@ -16,26 +16,36 @@ const USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"
 ];
 
-// Blacklist globale pour les cartes à l'unité (évite de le répéter pour chaque carte)
+// Blacklist globale pour les cartes à l'unité
 const GLOBAL_EXCLUSIONS = [
-    "japonaise", "jap", "anglaise", "eng", "coréenne", // Langues
-    "pca", "psa", "bgs", "cgc", "gradé", "gradée", "grade", // Gradation
-    "reverse", "holographique", "oversize", "jumbo" // Formats
+    "japonaise", "jap", "anglaise", "eng", "coréenne", 
+    "pca", "psa", "bgs", "cgc", "gradé", "gradée", "grade", 
+    "reverse", "holographique", "oversize", "jumbo" 
 ];
 
 const CAMPAIGNS = {
     "CARTES_A_L_UNITE": {
         allowed_merchant_types: ["pure_player"],
-        // On n'utilise plus d'URLs directes, on utilise la barre de recherche native.
         products: {
+            "SINGLE_VERT_DE_FER_203": {
+                display_name: "Vert-de-Fer ex 203/162 (Forces Temporelles)",
+                topic: TOPICS.CARTE,
+                search_query: "Vert Fer 203", 
+                validation: {
+                    must_include_one_name: ["vert-de-fer", "vert de fer", "vert defer"],
+                    must_include_one_number: ["203/162", "203-162", "203 "],
+                    must_include_one_marker: ["alternative", "alt", "sir", "forces temporelles", "tef"],
+                    must_not_include: GLOBAL_EXCLUSIONS
+                }
+            },
             "SINGLE_FEU_PERCANT_204": {
                 display_name: "Feu-Perçant ex 204/162 (Forces Temporelles)",
                 topic: TOPICS.CARTE,
-                search_query: "Feu Percant 204", // Ce que le bot tape dans la barre de recherche
+                search_query: "Feu Percant 204", 
                 validation: {
                     must_include_one_name: ["feu-perçant", "feu-percant", "feu perçant", "feu percant"],
-                    must_include_one_number: ["204/162", "204-162", "204 "], // L'espace après le 4 est voulu
-                    must_include_one_marker: ["alternative", "alt", "sir", "forces temporelles", "tef"], // Sécurité optionnelle
+                    must_include_one_number: ["204/162", "204-162", "204 "], 
+                    must_include_one_marker: ["alternative", "alt", "sir", "forces temporelles", "tef"], 
                     must_not_include: GLOBAL_EXCLUSIONS
                 }
             },
@@ -46,6 +56,28 @@ const CAMPAIGNS = {
                 validation: {
                     must_include_one_name: ["serpente-eau", "serpente eau"],
                     must_include_one_number: ["205/162", "205-162", "205 "],
+                    must_include_one_marker: ["alternative", "alt", "sir", "forces temporelles", "tef"],
+                    must_not_include: GLOBAL_EXCLUSIONS
+                }
+            },
+            "SINGLE_CHEF_DE_FER_206": {
+                display_name: "Chef-de-Fer ex 206/162 (Forces Temporelles)",
+                topic: TOPICS.CARTE,
+                search_query: "Chef Fer 206",
+                validation: {
+                    must_include_one_name: ["chef-de-fer", "chef de fer", "chef defer"],
+                    must_include_one_number: ["206/162", "206-162", "206 "],
+                    must_include_one_marker: ["alternative", "alt", "sir", "forces temporelles", "tef"],
+                    must_not_include: GLOBAL_EXCLUSIONS
+                }
+            },
+            "SINGLE_IRE_FOUDRE_208": {
+                display_name: "Ire-Foudre ex 208/162 (Forces Temporelles)",
+                topic: TOPICS.CARTE,
+                search_query: "Ire Foudre 208",
+                validation: {
+                    must_include_one_name: ["ire-foudre", "ire foudre", "irefoudre"],
+                    must_include_one_number: ["208/162", "208-162", "208 "],
                     must_include_one_marker: ["alternative", "alt", "sir", "forces temporelles", "tef"],
                     must_not_include: GLOBAL_EXCLUSIONS
                 }
