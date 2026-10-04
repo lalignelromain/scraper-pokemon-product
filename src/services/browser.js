@@ -1,10 +1,14 @@
 /**
- * @fileoverview Browser management service using Playwright.
+ * @fileoverview Browser management service using Playwright with Stealth Plugin.
  */
 
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth')();
 const { USER_AGENTS } = require('../config/constants');
 const logger = require('../utils/logger');
+
+// Activation du mode furtif (bypass Cloudflare/Datadome)
+chromium.use(stealth);
 
 /**
  * Returns a random User-Agent string from the configured list.
@@ -16,11 +20,11 @@ const getRandomUserAgent = () => {
 
 /**
  * Launches a new Chromium browser instance.
- * @returns {Promise<import('playwright').Browser|null>} The browser instance, or null if launch fails.
+ * @returns {Promise<import('playwright').Browser|null>} The browser instance.
  */
 const launchBrowser = async () => {
     try {
-        logger.system("Starting Playwright browser instance...");
+        logger.system("Starting Playwright Stealth browser instance...");
         const browser = await chromium.launch({ headless: true });
         return browser;
     } catch (error) {
@@ -30,11 +34,10 @@ const launchBrowser = async () => {
 };
 
 /**
- * Creates a new browser context and page, navigates to the URL, and fetches the HTML content.
- * Includes a random delay to simulate human behavior.
+ * Creates a new browser context and page, navigates to the URL, and fetches HTML.
  * @param {import('playwright').Browser} browser - The active browser instance.
  * @param {string} url - The target URL to scrape.
- * @returns {Promise<string|null>} The raw HTML content, or null if navigation fails.
+ * @returns {Promise<string|null>} The raw HTML content.
  */
 const fetchPageHtml = async (browser, url) => {
     let context = null;
@@ -42,19 +45,34 @@ const fetchPageHtml = async (browser, url) => {
         context = await browser.newContext({
             userAgent: getRandomUserAgent(),
             locale: 'fr-FR',
-            viewport: { width: 1280, height: 720 }
+            viewport: { width: 1280, height: 720 },
+            // On ajoute des permissions basiques pour simuler un vrai navigateur
+            permissions: ['geolocation'] 
         });
 
         const page = await context.newPage();
         
-        // Wait until the DOM is parsed. 45s timeout for slower targets.
+        // Navigation initiale
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
         
-        // Anti-bot mitigation: Random human-like delay between 2s and 5s
+        // Délai humain aléatoire (2s à 5s)
         const randomDelay = Math.floor(Math.random() * 3000) + 2000;
         await page.waitForTimeout(randomDelay);
 
-        const html = await page.content();
+        let html = null;
+        try {
+            html = await page.content();
+        } catch (contentError) {
+            // CORRECTION CARDS HUNTER : Si la page redirige pendant qu'on tente de lire le code
+            if (contentError.message.includes('navigating')) {
+                logger.warn(`Redirection en cours détectée sur ${url}. Attente de stabilisation...`);
+                await page.waitForLoadState('domcontentloaded', { timeout: 15000 });
+                html = await page.content();
+            } else {
+                throw contentError;
+            }
+        }
+
         return html;
 
     } catch (error) {
