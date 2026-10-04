@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '20'
 
-- name: Install Dependencies
+      - name: Install Dependencies
         run: |
           npm init -y
           npm install cheerio playwright playwright-extra puppeteer-extra-plugin-stealth
