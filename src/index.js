@@ -64,11 +64,13 @@ const checkAllInventory = async () => {
                         continue;
                     }
 
-                    const htmlLower = html.toLowerCase();
+                    // On utilise Cheerio pour extraire uniquement le texte visible
                     const visibleText = cheerio.load(html)('body').text().toLowerCase();
 
                     // === ANTI-BOT SHIELD ===
-                    if (ANTI_BOT_KEYWORDS.some(kw => htmlLower.includes(kw))) {
+                    // CORRECTION : On scanne 'visibleText' et non 'htmlLower' pour éviter
+                    // de détecter "cloudflare" ou "captcha" dans les liens des balises <script>
+                    if (ANTI_BOT_KEYWORDS.some(kw => visibleText.includes(kw))) {
                         logger.warn(`Anti-bot block on ${merchant.name}. Skipping this campaign.`);
                         // On conserve l'état précédent pour ne pas déclencher de fausse rupture
                         for (const productKey of Object.keys(campaignData.products)) {
@@ -119,7 +121,8 @@ const checkAllInventory = async () => {
 
                 } catch (error) {
                     logger.error(`Error on ${merchant.name} [${campaignKey}]: ${error.message}`);
-                    success = true; // On passe à la suite pour ne pas bloquer le script entier
+                    // CORRECTION : J'ai supprimé `success = true;` ici. 
+                    // Si une erreur survient (timeout réseau par exemple), la boucle fera maintenant sa 2ème tentative.
                 }
             }
         }
